@@ -1,5 +1,5 @@
 from django.contrib import admin
-from mi.models import Age, ContactBool, Sex, County, Case, TravelType, TravelBool
+from mi.models import Age, ContactBool, Sex, County, Case, TravelType
 # Register your models here.
 
 
@@ -21,4 +21,3 @@ admin.site.register(Sex, SexAdmin)
 admin.site.register(County, CountyAdmin)
 admin.site.register(Case)
 admin.site.register(TravelType)
-admin.site.register(TravelBool)
