@@ -52,9 +52,19 @@ class Case(models.Model):
 
     @classmethod
     def create(cls, date, county, age, sex, travel, travel_type, contact_origin):
+        if County.objects.filter(county=county).exists():
+            db_county = County.objects.get(county=county)
+        else:
+            new_county = County.objects.create(county=county)
+            new_county.save()
+            db_county = County.objects.get(county=county)
+
+        if travel == 'Unknown':
+            travel = None
+
         case = cls(
                 date=date,
-                county=County.objects.get(county=county),
+                county=db_county,
                 age=Age.objects.get(age=age),
                 sex=Sex.objects.get(sex=sex),
                 travel=travel,
@@ -71,3 +81,17 @@ class Death(models.Model):
 
     def __str__(self):
         return f'{self.date.strftime("%Y/%m/%d")} - {self.high_risk} - {self.high_risk_type}'
+
+    @classmethod
+    def create(cls, date, high_risk, high_risk_type):
+        death = cls(date=date, high_risk=high_risk, high_risk_type=high_risk_type)
+        return death
+
+
+class Event(models.Model):
+    entry_date = models.DateField(auto_now=True)
+    eff_dt = models.DateTimeField()
+    event_text = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f'Effective {str(self.eff_dt)} - {self.event_text[:50]}{"..." if len(self.event_text) > 50 else ""}'
