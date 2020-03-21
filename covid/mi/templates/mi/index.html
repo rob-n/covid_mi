@@ -1,0 +1,19 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MI Coronavirus Cases</title>
+    <link rel="stylesheet" href="{% static 'mi/mi_map.css' %}">
+</head>
+<body>
+    <div>
+        <h2 class="main-title">COVID-19 Michigan Cases</h2>
+        <div>{{ data.count }}</div>
+    </div>
+</body>
+    <script src="{% static 'mi/michigan-counties.json'%}"></script>
+    <script src="{% static 'mi/d3-simple-slider.min.js'%}"></script>
+    <script src="{% static 'mi/d3.min.js'%}"></script>
+    <script src="{% static 'mi/mi_map.js' %}"></script>
+</html>
