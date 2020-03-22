@@ -3,3 +3,23 @@
     font-family: Helvetica, serif;
     color: #0f0f0f;
 }
+
+.county {
+    stroke: black;
+    stroke-linejoin: round;
+    fill: none;
+    /*fill: steelblue;*/
+}
+
+#slider-div {
+    position: fixed;
+    margin-left: 100px;
+    /*margin-bottom: 550px;*/
+}
+
+.label-year {
+    position: fixed;
+    margin-left: 50px;
+    font-weight: bold;
+
+}

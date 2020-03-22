@@ -9,11 +9,20 @@
 <body>
     <div>
         <h2 class="main-title">COVID-19 Michigan Cases</h2>
-        <div>{{ data.count }}</div>
+        <div id="slider-div"></div>
+        <div id="map-div"></div>
+{#        <div>{{ data.cases }}</div>#}
+{#        <div>{{ data.map_json }}</div>#}
     </div>
 </body>
-    <script src="{% static 'mi/michigan-counties.json'%}"></script>
+{#    <script src="{% static 'mi/michigan-counties.json'%}"></script>#}
     <script src="{% static 'mi/d3-simple-slider.min.js'%}"></script>
+    <script src="{% static 'mi/topojson.min.js' %}"></script>
     <script src="{% static 'mi/d3.min.js'%}"></script>
     <script src="{% static 'mi/mi_map.js' %}"></script>
+    <script>
+        let topo = {{ data.map_json | safe }};
+        let data = {{ data.cases | safe }};
+        createMap(topo, data);
+    </script>
 </html>
