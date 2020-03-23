@@ -10,25 +10,65 @@ let svg = d3.select('#map-div').append('svg')
     .append('g')
     .attr('transform', `translate(${margin.left}, ${margin.top * 2})`);
 
-let sliderParams = d3.sliderBottom()
-    .on('onchange', updateMap);
+let sliderCreated = false;
+function setSlider() {
 
-let slider = d3.select('#slider-div')
-    .append('svg')
-    .attr('width', 600)
-    .attr('height', 100)
-    .append('g')
-    .attr('id', 'slider')
-    .attr('transform', 'translate(30, 30)')
-;
+    console.log('dates', dates);
 
-sliderParams.min(2010)
-    .max(2015)
-    .step(1)
-    .ticks(6)
-    .width(500)
-    .tickFormat(d3.format('.4'))
-;
+    let sliderParams = d3.sliderBottom()
+        .on('onchange', updateMap);
+
+    if (d3.select('#date-type-select').node().value === 'date') {
+        console.log('date');
+        let formatDate = d3.timeParse('%m/%d');
+
+        let sliderDates = dates.map(d => {console.log(d); return formatDate(d)});
+        console.log('sliderDates', sliderDates);
+
+        sliderParams.min(sliderDates[0])
+            .max(sliderDates[dates.length - 1])
+            .step(1000 * 60 * 60 * 24)
+            // .ticks(dates.length)
+            .tickValues(sliderDates)
+            .tickFormat(d3.timeFormat('%m/%d'))
+            .default(sliderDates[sliderDates.length - 1])
+            // .text(d => d)
+            .width(500)
+            // .tickFormat(d3.format('.4'))
+        ;
+
+
+    } else {
+
+        sliderParams.min(0)
+            .max(dates.length)
+            .step(1)
+            .ticks(dates.length)
+            .width(500)
+            .tickFormat(d3.format('.4'))
+        ;
+
+    }
+    let slider = d3.select('#slider-div')
+            .append('svg')
+            .attr('id', 'svg-slider')
+            .attr('width', 600)
+            .attr('height', 100)
+            .append('g')
+            .attr('id', 'slider')
+            .attr('transform', 'translate(30, 30)')
+        ;
+
+    if (!sliderCreated) {
+        sliderCreated = true;
+    } else {
+        d3.select('#svg-slider').remove();
+    }
+
+
+    slider.call(sliderParams);
+}
+
 // console.log('loading json');
 // let promises = [
 //     d3.json('./michigan-counties.json'),
@@ -122,43 +162,49 @@ function setLegend(data) {
     //     .range(d3.schemeOranges[9])
     // ;
 
-   var w = 140, h = 300;
+   // var w = 140, h = 300;
+   //
+	// 	var key = svg.append("svg")
+	// 		.attr("width", w)
+	// 		.attr("height", h)
+	// 		.attr("class", "legend");
+   //
+	// 	var legend = key.append("defs")
+	// 		.append("svg:linearGradient")
+	// 		.attr("id", "gradient")
+	// 		.attr("x1", "100%")
+	// 		.attr("y1", "0%")
+	// 		.attr("x2", "100%")
+	// 		.attr("y2", "100%")
+	// 		.attr("spreadMethod", "pad");
+   //
+	// 	legend.append("stop")
+	// 		.attr("offset", "0%")
+	// 		.attr("stop-color", color(maxVal))
+	// 		.attr("stop-opacity", 1);
+   //
+	// 	legend.append("stop")
+	// 		.attr("offset", "100%")
+	// 		.attr("stop-color", color(0))
+	// 		.attr("stop-opacity", 1);
+   //
+	// 	key.append("rect")
+	// 		.attr("width", w - 100)
+	// 		.attr("height", h)
+	// 		.style("fill", "url(#gradient)")
+	// 		.attr("transform", "translate(0,10)");
 
-		var key = svg.append("svg")
-			.attr("width", w)
-			.attr("height", h)
-			.attr("class", "legend");
-
-		var legend = key.append("defs")
-			.append("svg:linearGradient")
-			.attr("id", "gradient")
-			.attr("x1", "100%")
-			.attr("y1", "0%")
-			.attr("x2", "100%")
-			.attr("y2", "100%")
-			.attr("spreadMethod", "pad");
-
-		legend.append("stop")
-			.attr("offset", "0%")
-			.attr("stop-color", color(maxVal))
-			.attr("stop-opacity", 1);
-
-		legend.append("stop")
-			.attr("offset", "100%")
-			.attr("stop-color", color(0))
-			.attr("stop-opacity", 1);
-
-		key.append("rect")
-			.attr("width", w - 100)
-			.attr("height", h)
-			.style("fill", "url(#gradient)")
-			.attr("transform", "translate(0,10)");
+    let legendVals = [];
+    for (let i = 0; i < domainVals.length - 1; i++) {
+        legendVals.push(`${domainVals[i]}-${domainVals[i + 1] - 1}`)
+    }
+    legendVals.push(maxVal.toString() + '+');
 
     legend_a = svg.selectAll('.legend')
-        .data(domainVals)
+        .data(legendVals)
         .enter().append('g')
         .attr('class', 'legend')
-        .attr('transform', (d, i) => `translate(${width - 20}, ${i * 20})`)
+        .attr('transform', (d, i) => `translate(${width - 150}, ${i * 20})`)
     ;
 
     legend_a.exit().remove();
@@ -168,13 +214,13 @@ function setLegend(data) {
         .attr('class', 'legend-text');
 
     legend_a.append('circle')
-        .attr('fill', d => color(d))
+        .attr('fill', d => color(parseInt(d.split('-')[0])))
         .attr('cx', 5)
         .attr('cy', 0)
         .attr('r', 5);
 }
 
-function createMap(topography, data){
+function createMap(){
     data['Wayne'] += data['Detroit'];
 
     caseInfo = data;
@@ -243,7 +289,9 @@ function createMap(topography, data){
 //     return color(d.total);
 // }
 
-slider.call(sliderParams);
+
+createMap();
+setSlider();
 
 function updateMap() {
 

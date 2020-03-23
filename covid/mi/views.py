@@ -25,10 +25,12 @@ class IndexView(generic.ListView):
         cases = Case.objects.values('county__county') \
             .annotate(total=Count('county__county'))
         totals_dict = {x['county__county']: x['total'] for x in cases}
-        json_cases = json.loads(json.dumps(list(cases)))
+        dates = Case.objects.values_list('date').distinct()
+        dates_list = [x[0].strftime('%m/%d') for x in dates]
         # json_cases = serializers.serialize('json', cases)
         context = {
             'cases': totals_dict,
-            'map_json': map_json
+            'map_json': map_json,
+            'dates': dates_list
         }
         return context

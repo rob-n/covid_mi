@@ -9,6 +9,15 @@
 <body>
     <div>
         <h2 class="main-title">COVID-19 Michigan Cases</h2>
+        <div id="slider-type-div">
+
+            <label for="date-type-select">Total Type:</label>
+            <select name="date-type" id="date-type-select" onchange="setSlider()">
+                <option value="total" selected>Total</option>
+                <option value="date">Date</option>
+                <option value="days">Days</option>
+            </select>
+        </div>
         <div id="slider-div"></div>
         <div id="map-div"></div>
 {#        <div>{{ data.cases }}</div>#}
@@ -21,10 +30,10 @@
     <script src="{% static 'mi/d3.min.js'%}"></script>
     <script src="{% static 'mi/d3-tip.min.js' %}"></script>
     <script src="{% static 'mi/d3-scale-chromatic.v1.min.js' %}"></script>
-    <script src="{% static 'mi/mi_map.js' %}"></script>
     <script>
-        let topo = {{ data.map_json | safe }};
+        let topography = {{ data.map_json | safe }};
         let data = {{ data.cases | safe }};
-        createMap(topo, data);
+        let dates = {{ data.dates | safe }};
     </script>
+    <script src="{% static 'mi/mi_map.js' %}"></script>
 </html>
