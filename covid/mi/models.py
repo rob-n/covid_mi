@@ -73,7 +73,7 @@ class Case(models.Model):
         return total
 
     @staticmethod
-    def load_data_path(from_index=1, from_date: datetime.datetime = None):
+    def load_data_path(from_index=1, from_date: datetime.date = None):
         """
         Loads cases from csv file in data directory (data/mi_cases.csv)
         :param from_index: index to start at. Initial one offset due to headers.
@@ -88,7 +88,7 @@ class Case(models.Model):
                 split_line = line.replace('\n', '').split(',')
                 cleaned = [x.title() for x in split_line]
                 if from_date:
-                    if datetime.datetime.strptime(cleaned[0], '%Y-%m-%d') < from_date:
+                    if datetime.datetime.strptime(cleaned[0], '%Y-%m-%d').date() < from_date:
                         continue
                 new_case = Case.create(*cleaned)
                 new_case.save()
@@ -134,7 +134,7 @@ class Death(models.Model):
                f' {self.high_risk} - {self.high_risk_type}'
 
     @staticmethod
-    def load_data_path(from_index=1, from_date: datetime.datetime = None):
+    def load_data_path(from_index=1, from_date: datetime.date = None):
         """
         Loads deaths from csv file in data directory (data/mi_deaths.csv)
         :param from_index: index to start at. Initial one offset due to headers.
@@ -148,7 +148,7 @@ class Death(models.Model):
                 # remove new line character at end and set to title case
                 split_line = line.replace('\n', '').split(',')
                 if from_date:
-                    if datetime.datetime.strptime(split_line[0], '%Y-%m-%d') < from_date:
+                    if datetime.datetime.strptime(split_line[0], '%Y-%m-%d').date() < from_date:
                         continue
                 new_death = Death.create(*split_line)
                 new_death.save()
