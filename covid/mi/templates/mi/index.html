@@ -9,13 +9,20 @@
 <body>
     <div>
         <h2 class="main-title">COVID-19 Michigan Cases</h2>
+        <h3>{{ request.get_full_path }}</h3>
         <div id="slider-type-div">
 
             <label for="date-type-select">Total Type:</label>
-            <select name="date-type" id="date-type-select" onchange="setSlider()">
-                <option value="total" selected>Total</option>
-                <option value="date">Date</option>
-                <option value="days">Days</option>
+            <select name="date-type" id="date-type-select">
+                <option value="total" selected>Cumulative</option>
+                <option value="date">Individual</option>
+            </select>
+            <br>
+            <br>
+            <label for="slider-tick-select">Show Ticks as:</label>
+            <select name="slider-tick" id="slider-tick-select" onchange="setSlider()">
+                <option value="date" selected>Date</option>
+                <option value="day">Day #</option>
             </select>
         </div>
         <div id="slider-div"></div>
@@ -24,7 +31,6 @@
 {#        <div>{{ data.map_json }}</div>#}
     </div>
 </body>
-{#    <script src="{% static 'mi/michigan-counties.json'%}"></script>#}
     <script src="{% static 'mi/d3-simple-slider.min.js'%}"></script>
     <script src="{% static 'mi/topojson.min.js' %}"></script>
     <script src="{% static 'mi/d3.min.js'%}"></script>
@@ -34,6 +40,26 @@
         let topography = {{ data.map_json | safe }};
         let data = {{ data.cases | safe }};
         let dates = {{ data.dates | safe }};
+        let case_dates = {{ data.date_cases | safe }};
+        let json_url = "{% url 'index' %}";
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                let cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    let cookie = cookies[i].trim();
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        let csrftoken = getCookie('csrftoken');
     </script>
     <script src="{% static 'mi/mi_map.js' %}"></script>
 </html>

@@ -11,32 +11,30 @@ let svg = d3.select('#map-div').append('svg')
     .attr('transform', `translate(${margin.left}, ${margin.top * 2})`);
 
 let sliderCreated = false;
+
+let sliderParams;
+
 function setSlider() {
 
     console.log('dates', dates);
+    sliderParams = d3.sliderBottom()
+        .on('onchange', createMap);
 
-    let sliderParams = d3.sliderBottom()
-        .on('onchange', updateMap);
-
-    if (d3.select('#date-type-select').node().value === 'date') {
+    if (d3.select('#slider-tick-select').node().value === 'date') {
         console.log('date');
         let formatDate = d3.timeParse('%m/%d');
 
-        let sliderDates = dates.map(d => {console.log(d); return formatDate(d)});
+        let sliderDates = dates.map(d => {return formatDate(d)});
         console.log('sliderDates', sliderDates);
 
         sliderParams.min(sliderDates[0])
             .max(sliderDates[dates.length - 1])
             .step(1000 * 60 * 60 * 24)
-            // .ticks(dates.length)
             .tickValues(sliderDates)
             .tickFormat(d3.timeFormat('%m/%d'))
             .default(sliderDates[sliderDates.length - 1])
-            // .text(d => d)
             .width(500)
-            // .tickFormat(d3.format('.4'))
         ;
-
 
     } else {
 
@@ -44,6 +42,7 @@ function setSlider() {
             .max(dates.length)
             .step(1)
             .ticks(dates.length)
+            .default(dates.length)
             .width(500)
             .tickFormat(d3.format('.4'))
         ;
@@ -69,19 +68,12 @@ function setSlider() {
     slider.call(sliderParams);
 }
 
-// console.log('loading json');
-// let promises = [
-//     d3.json('./michigan-counties.json'),
-// ];
-
 let path = d3.geoPath();
-let cases = d3.map();
 
 let caseInfo = {};
 
 let projection = d3.geoAlbersUsa()
     .translate([-250, height + margin.top + margin.bottom])
-    // .translate([width / 150 - margin.right - margin.left, height + margin.top + margin.bottom])
     .scale([5000])
 ;
 
@@ -98,6 +90,7 @@ function addDetroit(d, total) {
 }
 
 let tip = d3.tip().attr('class', 'd3-tip').html(function(d) {
+    let data = getData();
     let total = data[d.properties['NAME']];
     if (total === undefined) {
         total = 0;
@@ -109,10 +102,6 @@ let tip = d3.tip().attr('class', 'd3-tip').html(function(d) {
 });
 
 let color;
-// = d3.scaleQuantize([1, 10],
-//     d3.schemeOranges[9])
-//     .domain(d3.range(1, 10))
-// ;
 
 function colorFunction(d, data) {
     let total = data[d.properties['NAME']];
@@ -127,7 +116,8 @@ function colorFunction(d, data) {
 
 let legend_a;
 
-function setLegend(data) {
+function setLegend() {
+    let data = getData();
     let dataValues = Object.values(data);
     let newSet = new Set;
     for (let i = 0; i < dataValues.length; i++) {
@@ -220,13 +210,53 @@ function setLegend(data) {
         .attr('r', 5);
 }
 
-function createMap(){
-    data['Wayne'] += data['Detroit'];
+function getData() {
+    let map_data;
+    if (d3.select('#date-type-select').node().value === 'total') {
+        let sd = sliderParams.value();
+        let parsed = ('0' + (sd.getMonth() + 1)).slice(-2) + '/' + ('0' + sd.getDate()).slice(-2);
+        map_data = case_dates[parsed.toString()];
+        // console.log('parsed', parsed);
+        // console.log('case_dates', case_dates);
+        // console.log(map_data);
+    } else {
+        console.log('setting up ajax...');
+        let ed = sliderParams.value();
+        let parsed = '2020-' + ('0' + (ed.getMonth() + 1)).slice(-2) + '-' + ('0' + ed.getDate()).slice(-2);
+        d3.json(json_url, {
+          method:"POST",
+          body: JSON.stringify({'end_date': parsed}),
+          headers: {
+            "X-CSRFToken": csrftoken,
+            "Content-type": "application/json; charset=UTF-8"
+          }
+        })
+        .then(json => {
+            console.log('back from ajax');
+            console.log(json);
+         // svg.append("text")
+         //  .text(JSON.stringify(json))
+         //  .attr("y", 200)
+         //  .attr("x", 120)
+         //  .attr("font-size", 16)
+         //  .attr("font-family", "monospace")
 
-    caseInfo = data;
+    });
+        map_data = data;
+    }
+    return map_data;
+}
+
+let map_data;
+function createMap(){
+
+    map_data = getData();
+    map_data['Wayne'] += map_data['Detroit'];
+
+    caseInfo = map_data;
     console.log('topography', topography);
-    console.log('data', data);
-    setLegend(data);
+    console.log('map_data', map_data);
+    setLegend(map_data);
     let geojson = topojson.feature(topography, topography.objects['cb_2015_michigan_county_20m']);
     console.log("geojson", geojson);
 
@@ -237,7 +267,7 @@ function createMap(){
         .data(topojson.feature(topography, topography.objects['cb_2015_michigan_county_20m']).features)
         .enter().append('path')
         .attr('stroke', 'black')
-        .attr('fill', d => colorFunction(d, data))
+        .attr('fill', d => colorFunction(d, map_data))
         .attr('d', path.projection(projection))
         .on('mouseover', tip.show)
         .on('mouseout', tip.hide)
@@ -252,6 +282,7 @@ function createMap(){
         .attr('d', path)
     ;
 
+    setLegend();
     // svg.append('path')
     //     .data(topojson.feature(topography, topography.objects['nation']).features)
     //     .attr('stroke', 'black')
@@ -290,9 +321,10 @@ function createMap(){
 // }
 
 
-createMap();
 setSlider();
+createMap();
 
 function updateMap() {
 
 }
+
