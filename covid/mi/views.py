@@ -24,33 +24,12 @@ class IndexView(generic.ListView):
             string_json = f.read()
         map_json = json.loads(string_json)
         case_count = Case.objects.all().count()
-        # date_cases = Case.objects.values('county__county', 'date')\
-        #     .annotate(total=Count('county__county'))
-        # date_deaths = Death.objects.values('county__county', 'date') \
-        #     .annotate(total=Count('county__county'))
-        # case_totals = {}
-        # death_totals = {}
-        # for case in date_cases:
-        #     case_date = case['date'].strftime('%m/%d')
-        #     if not case_totals.get(case_date):
-        #         case_totals[case_date] = {}
-        #     case_totals[case_date][case['county__county']] = case['total']
-        #
-        # for death in date_deaths:
-        #     case_date = death['date'].strftime('%m/%d')
-        #     if not death_totals.get(case_date):
-        #         death_totals[case_date] = {}
-        #     death_totals[case_date][death['county__county']] = death['total']
-
-        # cases = Case.objects.values('county__county') \
-        #     .annotate(total=Count('county__county'))
+        death_count = Death.objects.all().count()
         dates = Case.objects.values_list('date').distinct()
         dates_list = [x[0].strftime('%m/%d') for x in dates]
-        # json_cases = serializers.serialize('json', cases)
         context = {
             'cases': case_count,
-            # 'date_cases': case_totals,
-            # 'date_deaths': death_totals,
+            'deaths': death_count,
             'map_json': map_json,
             'dates': dates_list
         }
@@ -82,20 +61,28 @@ class CaseList(APIView):
 
     def post(self, request, format=None):
         if request.data['date_type'] == 'date':
-            cases = Case.objects.filter(date=(request.data['end_date'])) \
-                .values('county__county').annotate(total=Count('county__county'))
-            deaths = Death.objects.filter(date=(request.data['end_date'])) \
-                .values('county__county').annotate(total=Count('county__county'))
+            cases = Case.objects.filter(date=(request.data['end_date']))
+            case_total = cases.count()
+            cases = cases.values('county__county').annotate(total=Count('county__county'))
+
+            deaths = Death.objects.filter(date=(request.data['end_date']))
+            death_total = deaths.count()
+            deaths = deaths.values('county__county').annotate(total=Count('county__county'))
         else:
-            cases = Case.objects.filter(date__range=('2020-03-10', request.data['end_date'])) \
-                .values('county__county').annotate(total=Count('county__county'))
-            deaths = Death.objects.filter(date__range=('2020-03-10', request.data['end_date'])) \
-                .values('county__county').annotate(total=Count('county__county'))
+            cases = Case.objects.filter(date__range=('2020-03-10', request.data['end_date']))
+            case_total = cases.count()
+            cases = cases.values('county__county').annotate(total=Count('county__county'))
+
+            deaths = Death.objects.filter(date__range=('2020-03-10', request.data['end_date']))
+            death_total = deaths.count()
+            deaths = deaths.values('county__county').annotate(total=Count('county__county'))
 
         totals_dict = {x['county__county']: x['total'] for x in cases}
         death_dict = {x['county__county']: x['total'] for x in deaths}
         context = {
             'cases': totals_dict,
-            'deaths': death_dict
+            'deaths': death_dict,
+            'total_cases': case_total,
+            'total_deaths': death_total
         }
         return JsonResponse(context)

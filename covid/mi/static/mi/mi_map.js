@@ -1,14 +1,14 @@
 // import {legend} from "d3/color-legend"
 
 let margin = ({top: 70, right: 30, bottom: 30, left: 50});
-let height = 750 - margin.top - margin.bottom;
+let height = 625 - margin.top - margin.bottom;
 let width = 955 - margin.left - margin.right;
 
 let svg = d3.select('#map-div').append('svg')
-    .attr('height', height + margin.top * 2 + margin.bottom * 2)
+    .attr('height', height)
     .attr('width', width + margin.left + margin.right)
     .append('g')
-    .attr('transform', `translate(${margin.left}, ${margin.top * 2})`);
+    .attr('transform', `translate(${margin.left}, ${margin.top * 4})`);
 
 let sliderCreated = false;
 let sliderParams;
@@ -23,7 +23,7 @@ function setSlider() {
             updateMap()
         });
 
-    if (d3.select('#slider-tick-select').node().value === 'date') {
+    // if (d3.select('#slider-tick-select').node().value === 'date') {
         console.log('date');
         let formatDate = d3.timeParse('%m/%d');
 
@@ -38,25 +38,25 @@ function setSlider() {
             .tickValues(sliderDates)
             .tickFormat(d3.timeFormat('%m/%d'))
             .default(sliderDates[sliderDates.length - 1])
-            .width(500)
+            .width(600)
         ;
 
-    } else {
-
-        sliderParams.min(0)
-            .max(dates.length)
-            .step(1)
-            .ticks(dates.length)
-            .default(dates.length)
-            .width(500)
-            .tickFormat(d3.format('.4'))
-        ;
-
-    }
+    // } else {
+    //
+    //     sliderParams.min(0)
+    //         .max(dates.length)
+    //         .step(1)
+    //         .ticks(dates.length)
+    //         .default(dates.length)
+    //         .width(600)
+    //         .tickFormat(d3.format('.4'))
+    //     ;
+    //
+    // }
     let slider = d3.select('#slider-div')
         .append('svg')
         .attr('id', 'svg-slider')
-        .attr('width', 600)
+        .attr('width', width)
         .attr('height', 100)
         .append('g')
         .attr('id', 'slider')
@@ -151,7 +151,7 @@ function setLegend() {
         .data(legendVals)
         .enter().append('g')
         .attr('class', 'legend')
-        .attr('transform', (d, i) => `translate(${width - 150}, ${i * 20})`)
+        .attr('transform', (d, i) => `translate(${width - 250}, ${i * 20})`)
     ;
 
     legend_a.exit().remove();
@@ -212,6 +212,8 @@ function getData() {
             }
 
             onDays = date_type === 'date';
+            d3.select('#case-total').text('Total Cases: ' + json['total_cases'].toLocaleString());
+            d3.select('#death-total').text('Total Deaths: ' + json['total_deaths'].toLocaleString());
 
             updateMap();
 

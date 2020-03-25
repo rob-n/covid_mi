@@ -8,29 +8,35 @@
     <link rel="stylesheet" href="{% static 'mi/mi_map.css' %}">
 </head>
 <body>
-    <div class="main-div">
-        <h2 class="main-title">COVID-19 Michigan Cases</h2>
-        <h3>Total Cases: {{ data.cases | intcomma }}</h3>
-        <div id="slider-type-div">
-
+    <aside>
+        <h2 class="main-title">MI COVID-19 Tracker</h2>
+        <h3 id="case-total"></h3>
+        <h3 id="death-total"></h3>
+        <div id="slider-type-dates">
             <label for="date-type-select">Total Type:</label>
             <select name="date-type" id="date-type-select" onchange="getData()">
                 <option value="total" selected>Cumulative</option>
                 <option value="date">Individual</option>
             </select>
-            <label for="slider-tick-select">Show Ticks as:</label>
-            <select name="slider-tick" id="slider-tick-select" onchange="setSlider()">
-                <option value="date" selected>Date</option>
-                <option value="day">Day #</option>
-            </select>
-            <br>
-            <br>
         </div>
-        <div id="slider-div"></div>
-        <div id="map-div"></div>
-        {#        <div>{{ data.cases }}</div>#}
-{#        <div>{{ data.map_json }}</div>#}
-    </div>
+{#        <div id="slider-type-ticks">#}
+{#            <label for="slider-tick-select">Show Ticks as:</label>#}
+{#            <select name="slider-tick" id="slider-tick-select" onchange="setSlider()">#}
+{#                <option value="date" selected>Date</option>#}
+{#                <option value="day">Day #</option>#}
+{#            </select>#}
+{#            <br>#}
+{#            <br>#}
+{#        </div>#}
+    </aside>
+    <main>
+        <div class="main-div">
+            <div id="map-div"></div>
+            <div id="slider-div"></div>
+            {#        <div>{{ data.cases }}</div>#}
+            {#        <div>{{ data.map_json }}</div>#}
+        </div>
+    </main>
 </body>
     <script src="{% static 'mi/d3-simple-slider.min.js'%}"></script>
     <script src="{% static 'mi/topojson.min.js' %}"></script>
