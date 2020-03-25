@@ -11,20 +11,25 @@ let svg = d3.select('#map-div').append('svg')
     .attr('transform', `translate(${margin.left}, ${margin.top * 2})`);
 
 let sliderCreated = false;
-
 let sliderParams;
+let deathData;
 
 function setSlider() {
 
     console.log('dates', dates);
     sliderParams = d3.sliderBottom()
-        .on('onchange', () => {getData(); updateMap()});
+        .on('onchange', () => {
+            getData();
+            updateMap()
+        });
 
     if (d3.select('#slider-tick-select').node().value === 'date') {
         console.log('date');
         let formatDate = d3.timeParse('%m/%d');
 
-        let sliderDates = dates.map(d => {return formatDate(d)});
+        let sliderDates = dates.map(d => {
+            return formatDate(d)
+        });
         console.log('sliderDates', sliderDates);
 
         sliderParams.min(sliderDates[0])
@@ -49,14 +54,14 @@ function setSlider() {
 
     }
     let slider = d3.select('#slider-div')
-            .append('svg')
-            .attr('id', 'svg-slider')
-            .attr('width', 600)
-            .attr('height', 100)
-            .append('g')
-            .attr('id', 'slider')
-            .attr('transform', 'translate(30, 30)')
-        ;
+        .append('svg')
+        .attr('id', 'svg-slider')
+        .attr('width', 600)
+        .attr('height', 100)
+        .append('g')
+        .attr('id', 'slider')
+        .attr('transform', 'translate(30, 30)')
+    ;
 
     if (!sliderCreated) {
         sliderCreated = true;
@@ -73,19 +78,24 @@ let path = d3.geoPath();
 let caseInfo = {};
 
 let projection = d3.geoAlbersUsa()
-    .translate([-250, height + margin.top + margin.bottom])
+    .translate([-350, height ])
     .scale([5000])
 ;
 
 let states;
 
-let tip = d3.tip().attr('class', 'd3-tip').html(function(d) {
-    let total = map_data[d.properties['NAME']];
+let tip = d3.tip().attr('class', 'd3-tip').html(function (d) {
+    let total = mapData[d.properties['NAME']];
     if (total === undefined) {
         total = 0;
     }
+    let deaths = deathData[d.properties['NAME']];
+    if (deaths === undefined) {
+        deaths = 0;
+    }
     let info = 'County: ' + d.properties['NAME'] + '<br>';
     info += 'Cases: ' + total + '<br>';
+    info += 'Deaths: ' + deaths;
     return info
 });
 
@@ -94,7 +104,7 @@ let color;
 function colorFunction(d, data) {
     let total = data[d.properties['NAME']];
     if (total === undefined) {
-       return '#FFFFFF';
+        return '#FFFFFF';
     } else {
         total = data[d.properties['NAME']];
     }
@@ -105,7 +115,7 @@ let legend_a;
 
 function setLegend() {
     // let data = getData();
-    let dataValues = Object.values(map_data);
+    let dataValues = Object.values(mapData);
     // let newSet = new Set;
     // for (let i = 0; i < dataValues.length; i++) {
     //     newSet.add(parseInt(dataValues[i]));
@@ -156,25 +166,28 @@ function setLegend() {
         .attr('cy', 0)
         .attr('r', 5);
 }
+
 let first = true;
+let onDays = false;
+
 function getData() {
-    // let map_data;
+    // let mapData;
     let date_type = d3.select('#date-type-select').node().value;
-        // console.log('setting up ajax...');
-        d3.select('body').style('cursor', 'wait');
-        d3.select('html').style('cursor', 'wait');
-        d3.select('input').style('cursor', 'wait');
-        d3.select("input").attr("disabled", "disabled");
-        let ed = sliderParams.value();
-        let parsed = '2020-' + ('0' + (ed.getMonth() + 1)).slice(-2) + '-' + ('0' + ed.getDate()).slice(-2);
-        d3.json(json_url, {
-          method:"POST",
-          body: JSON.stringify({'end_date': parsed, 'date_type': date_type}),
-          headers: {
-            // "X-CSRFToken": csrftoken,
+    // console.log('setting up ajax...');
+    d3.select('body').style('cursor', 'wait');
+    d3.select('html').style('cursor', 'wait');
+    d3.select('input').style('cursor', 'wait');
+    d3.select("input").attr("disabled", "disabled");
+    let ed = sliderParams.value();
+    let parsed = '2020-' + ('0' + (ed.getMonth() + 1)).slice(-2) + '-' + ('0' + ed.getDate()).slice(-2);
+    d3.json(jsonUrl, {
+        method: "POST",
+        body: JSON.stringify({'end_date': parsed, 'date_type': date_type}),
+        headers: {
+            "X-CSRFToken": csrfToken,
             "Content-type": "application/json; charset=UTF-8"
-          }
-        })
+        }
+    })
         .then(json => {
             // console.log('back from ajax');
 
@@ -183,29 +196,38 @@ function getData() {
             d3.select('input').style('cursor', '');
             d3.select("input").attr("disabled", "");
             // console.log('cases', json['cases']);
-            map_data = json['cases'];
-            if (!isNaN(map_data['Detroit'])) {
-                map_data['Wayne'] += map_data['Detroit'];
+            mapData = json['cases'];
+            deathData = json['deaths'];
+            if (!isNaN(mapData['Detroit'])) {
+                mapData['Wayne'] += mapData['Detroit'];
             }
             if (first || date_type === 'date') {
-                setLegend(map_data);
+                setLegend();
                 first = false;
+            } else {
+                if (onDays === true) {
+                    onDays = false;
+                    setLegend();
+                }
             }
+
+            onDays = date_type === 'date';
 
             updateMap();
 
-    });
+        });
 }
 
-let map_data;
-function createMap(){
+let mapData;
 
-      states = svg.append('g')
+function createMap() {
+
+    states = svg.append('g')
         .selectAll('path')
         .data(topojson.feature(topography, topography.objects['cb_2015_michigan_county_20m']).features)
         .enter().append('path')
         .attr('stroke', 'black')
-        // .attr('fill', d => colorFunction(d, map_data))
+        // .attr('fill', d => colorFunction(d, mapData))
         .attr('d', path.projection(projection))
         .on('mouseover', tip.show)
         .on('mouseout', tip.hide)
@@ -227,14 +249,13 @@ function createMap(){
 }
 
 
-
 setSlider();
 createMap();
 
 function updateMap() {
 
-    caseInfo = map_data;
-    states.attr('fill', d => colorFunction(d, map_data))
+    caseInfo = mapData;
+    states.attr('fill', d => colorFunction(d, mapData))
 
 }
 

@@ -40,8 +40,30 @@ class CaseModelTests(TestCase):
 class MainURLTest(TestCase):
     def setUp(self) -> None:
         self.home_url = '/'
+        self.api_case_url = '/api/case/'
+        self.api_death_url = '/api/death/'
 
     def test_home(self):
         c = Client()
         response = c.get(self.home_url)
+        assert response.status_code == 200
+
+    def test_api_case_get(self):
+        c = Client()
+        response = c.get(self.api_case_url)
+        assert response.status_code == 200
+
+    def test_api_case_post(self):
+        c = Client()
+        response = c.post(self.api_case_url, {'date_type': '', 'end_date': '2020-03-24'})
+        assert response.status_code == 200
+
+    def test_api_death_get(self):
+        c = Client()
+        response = c.get(self.api_death_url)
+        assert response.status_code == 200
+
+    def test_api_death_post(self):
+        c = Client()
+        response = c.post(self.api_death_url, {'date_type': '', 'end_date': '2020-03-24'})
         assert response.status_code == 200

@@ -8,8 +8,9 @@
     <link rel="stylesheet" href="{% static 'mi/mi_map.css' %}">
 </head>
 <body>
-    <div>
+    <div class="main-div">
         <h2 class="main-title">COVID-19 Michigan Cases</h2>
+        <h3>Total Cases: {{ data.cases | intcomma }}</h3>
         <div id="slider-type-div">
 
             <label for="date-type-select">Total Type:</label>
@@ -17,8 +18,6 @@
                 <option value="total" selected>Cumulative</option>
                 <option value="date">Individual</option>
             </select>
-            <br>
-            <br>
             <label for="slider-tick-select">Show Ticks as:</label>
             <select name="slider-tick" id="slider-tick-select" onchange="setSlider()">
                 <option value="date" selected>Date</option>
@@ -26,11 +25,10 @@
             </select>
             <br>
             <br>
-            <p>Total Cases: {{ data.cases | intcomma }}</p>
         </div>
         <div id="slider-div"></div>
         <div id="map-div"></div>
-{#        <div>{{ data.cases }}</div>#}
+        {#        <div>{{ data.cases }}</div>#}
 {#        <div>{{ data.map_json }}</div>#}
     </div>
 </body>
@@ -41,10 +39,8 @@
     <script src="{% static 'mi/d3-scale-chromatic.v1.min.js' %}"></script>
     <script>
         let topography = {{ data.map_json | safe }};
-        let data;
-        //= {{ data.cases | safe }};
         let dates = {{ data.dates | safe }};
-        let case_dates = {{ data.date_cases | safe }};
+                //let case_dates = {{ data.date_cases | safe }};
         let json_url = "{% url 'case-detail' %}";
 
         function getCookie(name) {
@@ -63,7 +59,9 @@
             return cookieValue;
         }
 
-        //let csrftoken = getCookie('csrftoken');
+        let csrfToken = getCookie('csrftoken');
+
+        let jsonUrl = "{% url 'case-detail' %}";
     </script>
     <script src="{% static 'mi/mi_map.js' %}"></script>
 </html>
