@@ -78,7 +78,7 @@ let path = d3.geoPath();
 let caseInfo = {};
 
 let projection = d3.geoAlbersUsa()
-    .translate([-350, height ])
+    .translate([-400, height ])
     .scale([5000])
 ;
 
@@ -94,8 +94,8 @@ let tip = d3.tip().attr('class', 'd3-tip').html(function (d) {
         deaths = 0;
     }
     let info = 'County: ' + d.properties['NAME'] + '<br>';
-    info += 'Cases: ' + total + '<br>';
-    info += 'Deaths: ' + deaths;
+    info += 'Cases: ' + total.toLocaleString() + '<br>';
+    info += 'Deaths: ' + deaths.toLocaleString();
     return info
 });
 
@@ -151,7 +151,7 @@ function setLegend() {
         .data(legendVals)
         .enter().append('g')
         .attr('class', 'legend')
-        .attr('transform', (d, i) => `translate(${width - 250}, ${i * 20})`)
+        .attr('transform', (d, i) => `translate(${width - 300}, ${i * 20})`)
     ;
 
     legend_a.exit().remove();

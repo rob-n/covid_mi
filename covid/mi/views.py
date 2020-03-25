@@ -86,3 +86,14 @@ class CaseList(APIView):
             'total_deaths': death_total
         }
         return JsonResponse(context)
+
+
+class CountyGrowth(APIView):
+    def get(self, request):
+        county = request.data.get('county')
+        cases = Case.objects.filter(county__county=county).values('date').annotate(total=Count('date'))
+        case_dict = {x['date'].strftime('%m/%d'): x['total'] for x in cases}
+        context = {
+            'cases': case_dict
+        }
+        return JsonResponse(context)

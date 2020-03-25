@@ -42,6 +42,7 @@ class MainURLTest(TestCase):
         self.home_url = '/'
         self.api_case_url = '/api/case/'
         self.api_death_url = '/api/death/'
+        self.api_growth_url = '/api/growth/'
 
     def test_home(self):
         c = Client()
@@ -56,6 +57,11 @@ class MainURLTest(TestCase):
     def test_api_case_post(self):
         c = Client()
         response = c.post(self.api_case_url, {'date_type': '', 'end_date': '2020-03-24'})
+        assert response.status_code == 200
+
+    def test_api_growth_get(self):
+        c = Client()
+        response = c.get(self.api_growth_url)
         assert response.status_code == 200
 
     def test_api_death_get(self):
