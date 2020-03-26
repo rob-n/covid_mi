@@ -120,20 +120,8 @@ function colorFunction(d, data) {
 let legend_a;
 
 function setLegend() {
-    // let data = getData();
     let dataValues = Object.values(mapData);
-    // let newSet = new Set;
-    // for (let i = 0; i < dataValues.length; i++) {
-    //     newSet.add(parseInt(dataValues[i]));
-    // }
-    // console.log('dataValues', dataValues);
-    // console.log('newSet', newSet);
-    // let newDomain = Array.from(newSet).sort((a, b) => a - b);
-    // let newDomain = d3.range(Math.min(...dataValues), Math.max(...dataValues));
-    // console.log('domain', newDomain);
 
-
-    let minVal = Math.min(...dataValues);
     let maxVal = Math.max(...dataValues);
     // console.log(maxVal);
 
@@ -141,11 +129,18 @@ function setLegend() {
     for (let i = 0; i < 6; i++) {
         domainVals[i + 1] = Math.round(maxVal / 9 + maxVal / 9 * i);
     }
+    // TODO: more consistent scale; scaleLog()?
     domainVals[7] = maxVal;
     // console.log('domainVals', domainVals);
     color = d3.scaleThreshold(domainVals,
         d3.schemeOranges[9])
     ;
+    //
+    // color = d3.scalePow()
+    //     .exponent(0.3)
+    //     .domain(domainVals)
+    //     .range(d3.schemeOranges[9])
+    // ;
 
     let legendVals = [];
     for (let i = 0; i < domainVals.length - 1; i++) {
@@ -278,6 +273,7 @@ let dateOffset = (24 * 60 * 60 * 1000);
 function backDate() {
     let currentDate = d3.select('#current-date').text();
     d3.select('#next-btn').attr('disabled', null);
+    d3.select('#last-btn').attr('disabled', null);
 
     let as_date = new Date(currentDate.replace(/-/g, '\/'));
     as_date.setTime(as_date.getTime() - dateOffset);
@@ -289,6 +285,7 @@ function backDate() {
 function nextDate() {
     let currentDate = d3.select('#current-date').text();
     d3.select('#prev-btn').attr('disabled', null);
+    d3.select('#first-btn').attr('disabled', null);
 
     let as_date = new Date(currentDate.replace(/-/g, '\/'));
     let dateOffset = (24 * 60 * 60 * 1000);
@@ -296,24 +293,47 @@ function nextDate() {
     setDate(as_date);
 }
 
+function firstDate() {
+    let as_date = new Date(min_date.replace(/-/g, '\/'));
+    setDate(as_date);
+    d3.select('#prev-btn').attr('disabled', true);
+    d3.select('#first-btn').attr('disabled', true);
+    d3.select('#next-btn').attr('disabled', null);
+    d3.select('#last-btn').attr('disabled', null);
+}
+
+function lastDate() {
+    let as_date = new Date(max_date.replace(/-/g, '\/'));
+    setDate(as_date);
+    d3.select('#prev-btn').attr('disabled', null);
+    d3.select('#first-btn').attr('disabled', null);
+    d3.select('#next-btn').attr('disabled', true);
+    d3.select('#last-btn').attr('disabled', true);
+}
+
 function setDate(asDate) {
     let newDate = asDate.toISOString().split('T')[0];
     d3.select('#current-date').text(newDate);
     if (newDate === min_date) {
         d3.select('#prev-btn').attr('disabled', true);
+        d3.select('#prev-btn').attr('disabled', true);
     } else if (newDate === max_date) {
         d3.select('#next-btn').attr('disabled', true);
+        d3.select('#last-btn').attr('disabled', true);
     }
     getData();
 }
 
 async function showProgression() {
     d3.select('#next-btn').attr('disabled', true);
+    d3.select('#last-btn').attr('disabled', true);
+    d3.select('#first-btn').attr('disabled', true);
     d3.select('#prev-btn').attr('disabled', true);
     for (let i = 0; i < dates.length; i++) {
         d3.select('#current-date').text(dates[i]);
         getData();
-        await new Promise(r => setTimeout(r, 400));
+        await new Promise(r => setTimeout(r, 450));
     }
     d3.select('#prev-btn').attr('disabled', null);
+    d3.select('#first-btn').attr('disabled', null);
 }
