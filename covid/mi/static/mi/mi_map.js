@@ -1,5 +1,23 @@
 // import {legend} from "d3/color-legend"
 
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        let cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            let cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+let csrfToken = getCookie('csrftoken');
+
 let margin = ({top: 70, right: 30, bottom: 30, left: 50});
 let height = 625 - margin.top - margin.bottom;
 let width = 955 - margin.left - margin.right;
@@ -10,75 +28,63 @@ let svg = d3.select('#map-div').append('svg')
     .append('g')
     .attr('transform', `translate(${margin.left}, ${margin.top * 4})`);
 
-let sliderCreated = false;
-let sliderParams;
+// let sliderCreated = false;
+// let sliderParams;
 let deathData;
 
-function setSlider() {
-
-    console.log('dates', dates);
-    sliderParams = d3.sliderBottom()
-        .on('onchange', () => {
-            getData();
-            updateMap()
-        });
-
-    // if (d3.select('#slider-tick-select').node().value === 'date') {
-        console.log('date');
-        let formatDate = d3.timeParse('%m/%d');
-
-        let sliderDates = dates.map(d => {
-            return formatDate(d)
-        });
-        console.log('sliderDates', sliderDates);
-
-        sliderParams.min(sliderDates[0])
-            .max(sliderDates[dates.length - 1])
-            .step(1000 * 60 * 60 * 24)
-            .tickValues(sliderDates)
-            .tickFormat(d3.timeFormat('%m/%d'))
-            .default(sliderDates[sliderDates.length - 1])
-            .width(600)
-        ;
-
-    // } else {
-    //
-    //     sliderParams.min(0)
-    //         .max(dates.length)
-    //         .step(1)
-    //         .ticks(dates.length)
-    //         .default(dates.length)
-    //         .width(600)
-    //         .tickFormat(d3.format('.4'))
-    //     ;
-    //
-    // }
-    let slider = d3.select('#slider-div')
-        .append('svg')
-        .attr('id', 'svg-slider')
-        .attr('width', width)
-        .attr('height', 100)
-        .append('g')
-        .attr('id', 'slider')
-        .attr('transform', 'translate(30, 30)')
-    ;
-
-    if (!sliderCreated) {
-        sliderCreated = true;
-    } else {
-        d3.select('#svg-slider').remove();
-    }
-
-
-    slider.call(sliderParams);
-}
+// function setSlider() {
+//
+//     // console.log('dates', dates);
+//     sliderParams = d3.sliderBottom()
+//         .on('onchange', () => {
+//             getData();
+//             updateMap()
+//         });
+//
+//     // if (d3.select('#slider-tick-select').node().value === 'date') {
+//     //     console.log('date');
+//     let formatDate = d3.timeParse('%m/%d');
+//
+//     let sliderDates = dates.map(d => {
+//         return formatDate(d)
+//     });
+//     // console.log('sliderDates', sliderDates);
+//
+//     sliderParams.min(sliderDates[0])
+//         .max(sliderDates[dates.length - 1])
+//         .step(1000 * 60 * 60 * 24)
+//         .tickValues(sliderDates)
+//         .tickFormat(d3.timeFormat('%m/%d'))
+//         .default(sliderDates[sliderDates.length - 1])
+//         .width(600)
+//     ;
+//
+//     let slider = d3.select('#slider-div')
+//         .append('svg')
+//         .attr('id', 'svg-slider')
+//         .attr('width', width)
+//         .attr('height', 100)
+//         .append('g')
+//         .attr('id', 'slider')
+//         .attr('transform', 'translate(30, 30)')
+//     ;
+//
+//     if (!sliderCreated) {
+//         sliderCreated = true;
+//     } else {
+//         d3.select('#svg-slider').remove();
+//     }
+//
+//
+//     slider.call(sliderParams);
+// }
 
 let path = d3.geoPath();
 
 let caseInfo = {};
 
 let projection = d3.geoAlbersUsa()
-    .translate([-400, height ])
+    .translate([-400, height])
     .scale([5000])
 ;
 
@@ -129,7 +135,7 @@ function setLegend() {
 
     let minVal = Math.min(...dataValues);
     let maxVal = Math.max(...dataValues);
-    console.log(maxVal);
+    // console.log(maxVal);
 
     let domainVals = [1];
     for (let i = 0; i < 6; i++) {
@@ -143,9 +149,9 @@ function setLegend() {
 
     let legendVals = [];
     for (let i = 0; i < domainVals.length - 1; i++) {
-        legendVals.push(`${domainVals[i]}-${domainVals[i + 1] - 1}`)
+        legendVals.push(`${domainVals[i].toLocaleString()}-${(domainVals[i + 1] - 1).toLocaleString()}`)
     }
-    legendVals.push(maxVal.toString() + '+');
+    legendVals.push(maxVal.toLocaleString() + '+');
 
     legend_a = svg.selectAll('.legend')
         .data(legendVals)
@@ -161,7 +167,13 @@ function setLegend() {
         .attr('class', 'legend-text');
 
     legend_a.append('circle')
-        .attr('fill', d => color(parseInt(d.split('-')[0])))
+        .attr('fill', d => {
+            let cleaned = d.split('-')[0];
+            cleaned = cleaned.replace(',', '');
+            cleaned = cleaned.replace('+', '');
+            return color(parseInt(cleaned))
+        })
+        .style('stroke', 'black')
         .attr('cx', 5)
         .attr('cy', 0)
         .attr('r', 5);
@@ -171,15 +183,15 @@ let first = true;
 let onDays = false;
 
 function getData() {
-    // let mapData;
     let date_type = d3.select('#date-type-select').node().value;
     // console.log('setting up ajax...');
     d3.select('body').style('cursor', 'wait');
     d3.select('html').style('cursor', 'wait');
     d3.select('input').style('cursor', 'wait');
     d3.select("input").attr("disabled", "disabled");
-    let ed = sliderParams.value();
-    let parsed = '2020-' + ('0' + (ed.getMonth() + 1)).slice(-2) + '-' + ('0' + ed.getDate()).slice(-2);
+    // let ed = sliderParams.value();
+    // let parsed = '2020-' + ('0' + (ed.getMonth() + 1)).slice(-2) + '-' + ('0' + ed.getDate()).slice(-2);
+    let parsed = d3.select('#current-date').text();
     d3.json(jsonUrl, {
         method: "POST",
         body: JSON.stringify({'end_date': parsed, 'date_type': date_type}),
@@ -214,6 +226,7 @@ function getData() {
             onDays = date_type === 'date';
             d3.select('#case-total').text('Total Cases: ' + json['total_cases'].toLocaleString());
             d3.select('#death-total').text('Total Deaths: ' + json['total_deaths'].toLocaleString());
+            d3.select('#current-date').text(parsed);
 
             updateMap();
 
@@ -244,20 +257,63 @@ function createMap() {
         .attr('d', path)
     ;
 
-    svg.call(tip);
 
     getData();
 
+    svg.call(tip);
 }
 
-
-setSlider();
+d3.select('#current-date').text(max_date);
+// setSlider();
 createMap();
 
 function updateMap() {
 
     caseInfo = mapData;
-    states.attr('fill', d => colorFunction(d, mapData))
+    states.transition().duration(250).attr('fill', d => colorFunction(d, mapData))
 
 }
 
+let dateOffset = (24 * 60 * 60 * 1000);
+function backDate() {
+    let currentDate = d3.select('#current-date').text();
+    d3.select('#next-btn').attr('disabled', null);
+
+    let as_date = new Date(currentDate.replace(/-/g, '\/'));
+    as_date.setTime(as_date.getTime() - dateOffset);
+
+    setDate(as_date);
+
+}
+
+function nextDate() {
+    let currentDate = d3.select('#current-date').text();
+    d3.select('#prev-btn').attr('disabled', null);
+
+    let as_date = new Date(currentDate.replace(/-/g, '\/'));
+    let dateOffset = (24 * 60 * 60 * 1000);
+    as_date.setTime(as_date.getTime() + dateOffset);
+    setDate(as_date);
+}
+
+function setDate(asDate) {
+    let newDate = asDate.toISOString().split('T')[0];
+    d3.select('#current-date').text(newDate);
+    if (newDate === min_date) {
+        d3.select('#prev-btn').attr('disabled', true);
+    } else if (newDate === max_date) {
+        d3.select('#next-btn').attr('disabled', true);
+    }
+    getData();
+}
+
+async function showProgression() {
+    d3.select('#next-btn').attr('disabled', true);
+    d3.select('#prev-btn').attr('disabled', true);
+    for (let i = 0; i < dates.length; i++) {
+        d3.select('#current-date').text(dates[i]);
+        getData();
+        await new Promise(r => setTimeout(r, 400));
+    }
+    d3.select('#prev-btn').attr('disabled', null);
+}

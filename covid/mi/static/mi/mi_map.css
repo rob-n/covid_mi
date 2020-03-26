@@ -27,7 +27,7 @@ body {
     background: linear-gradient(146deg, rgba(222,162,39,1) 0%, rgba(175,40,40,1) 100%);
     background-repeat: no-repeat;
     display: grid;
-    grid-template-columns: 20% auto;
+    grid-template-columns: 25% auto;
     padding: 2em;
     background-size: cover;
 }
@@ -36,15 +36,62 @@ aside {
     background: #f1f1f1;
     border-radius: 10px 0 0 10px;
     display: grid;
-    grid-template-rows: 10% 5% 10% 60% 7% ;
+    /*grid-template-rows: [title] 15% [cases] 5% [deaths] 10% [date] 10% [gap] 50% [foot] 7% ;*/
+    /*grid-template-rows: auto;*/
+    grid-template-rows: 12% 5% 10% 25% 10% 25% auto;
     padding: 1em;
     border: darkgray 1px solid;
     text-align: center;
+    /*min-width: 500px;*/
+}
+
+#date-grid button {
+    border-radius: 50%;
+    border: 1px solid black;
+    background: #3578ff;
+    color: white;
+    height: 35px;
+    width: 35px;
+    margin-left: 10px;
+}
+
+#date-grid button[disabled=disabled], #date-grid button:disabled {
+    background: grey;
+    color: black;
+}
+
+#progress-btn {
+    background: #3578ff;
+    color: white;
+    border: 1px solid black;
+    border-radius: 15px;
+    height: 30px;
+    width: 150px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#date-grid {
+    /*text-align: center;*/
+    /*float: top;*/
+    /*align-items: center;*/
+    justify-content: center;
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+}
+
+#date-grid div {
+    justify-content: center;
+    display: grid;
+    grid-template-columns: 50% 50%;
 }
 
 #slider-type-ticks {
     padding: 5px;
 }
+
+
+
 /*.legend {*/
 /*    background: #e9e9e9;*/
 /*    border-radius: 10px 0 0 10px;*/
@@ -57,7 +104,8 @@ aside div {
 }
 
 .tick text {
-   font-size: 10px;
+    font-size: 11px;
+    fill: black;
 }
 
 .parameter-value text {
@@ -65,7 +113,7 @@ aside div {
 }
 
 main {
-    background: #e9e9e9;
+    background: #f8f8f8;
     border-radius: 0 10px 10px 0;
     padding: 1em;
     border: darkgray 1px solid;

@@ -1,7 +1,7 @@
 import datetime
 import json
 
-from django.db.models import Count
+from django.db.models import Count, Max, Min
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views import generic
@@ -26,12 +26,16 @@ class IndexView(generic.ListView):
         case_count = Case.objects.all().count()
         death_count = Death.objects.all().count()
         dates = Case.objects.values_list('date').distinct()
-        dates_list = [x[0].strftime('%m/%d') for x in dates]
+        last_date = Case.objects.aggregate(max_date=Max('date'))['max_date']
+        min_date = Case.objects.aggregate(min_date=Min('date'))['min_date']
+        dates_list = [x[0].strftime('%Y-%m-%d') for x in dates]
         context = {
             'cases': case_count,
             'deaths': death_count,
             'map_json': map_json,
-            'dates': dates_list
+            'dates': dates_list,
+            'last_date': last_date,
+            'first_date': min_date
         }
         return context
 

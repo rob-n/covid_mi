@@ -50,7 +50,7 @@ class Case(models.Model):
     contact_origin = models.ForeignKey(to=ContactBool, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f'{self.date.strftime("%Y/%m/%d")} - {self.county} - {self.sex}'
+        return f'{self.date.strftime("%Y/%m/%d")} - {self.county}'
 
     @staticmethod
     def county_count(county: str, from_date: datetime.date = None, on_date: datetime.date = None):
@@ -130,8 +130,7 @@ class Death(models.Model):
     high_risk_type = models.CharField(max_length=500, blank=True, default='')
 
     def __str__(self):
-        return f'{self.date.strftime("%Y/%m/%d")} - {self.county} -' \
-               f' {self.high_risk} - {self.high_risk_type}'
+        return f'{self.date.strftime("%Y/%m/%d")} - {self.county}'
 
     @staticmethod
     def load_data_path(from_index=1, from_date: datetime.date = None):
