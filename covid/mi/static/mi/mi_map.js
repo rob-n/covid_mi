@@ -1,4 +1,3 @@
-// import {legend} from "d3/color-legend"
 
 function getCookie(name) {
     let cookieValue = null;
@@ -90,84 +89,166 @@ let projection = d3.geoAlbersUsa()
 
 let states;
 
-let tip = d3.tip().attr('class', 'd3-tip').html(function (d) {
-    let total = mapData[d.properties['NAME']];
-    if (total === undefined) {
-        total = 0;
-    }
-    let deaths = deathData[d.properties['NAME']];
-    if (deaths === undefined) {
-        deaths = 0;
-    }
-    let info = 'County: ' + d.properties['NAME'] + '<br>';
-    info += 'Cases: ' + total.toLocaleString() + '<br>';
-    info += 'Deaths: ' + deaths.toLocaleString();
-    return info
-});
+let tip = d3.tip()
+    .attr('class', 'd3-tip')
+    .html(function (d) {
+        let total = mapData[d.properties['NAME']];
+        if (total === undefined) {
+            total = 0;
+        }
+        let deaths = deathData[d.properties['NAME']];
+        if (deaths === undefined) {
+            deaths = 0;
+        }
+        let info = 'County: ' + d.properties['NAME'] + '<br>';
+        info += 'Cases: ' + total.toLocaleString() + '<br>';
+        info += 'Deaths: ' + deaths.toLocaleString();
+        return info
+    })
+    .direction(d => {
+        if (d.properties['NAME'] === 'Keweenaw') {
+            return 'e';
+        } else {
+            return 'n';
+        }
+    })
+;
 
 let color;
 
-function colorFunction(d, data) {
-    let total = data[d.properties['NAME']];
+function colorFunction(d) {
+    let total = mapData[d.properties['NAME']];
     if (total === undefined) {
         return '#FFFFFF';
     } else {
-        total = data[d.properties['NAME']];
+        total = mapData[d.properties['NAME']];
     }
     return color(total);
 }
 
-let legend_a;
+let legend;
+let removeLegend = false;
+let originalDomain;
+let circles;
 
-function setLegend() {
+function totalLegend() {
+    if (removeLegend) {
+        d3.selectAll('.legend').remove();
+    } else {
+        removeLegend = true;
+    }
+
     let dataValues = Object.values(mapData);
 
     let maxVal = Math.max(...dataValues);
-    // console.log(maxVal);
 
-    let domainVals = [1];
-    for (let i = 0; i < 6; i++) {
-        domainVals[i + 1] = Math.round(maxVal / 9 + maxVal / 9 * i);
+    let domainVals;
+    if (originalDomain !== undefined) {
+        domainVals = originalDomain;
+    } else {
+       domainVals = [1];
+        for (let i = 0; i < 6; i++) {
+            domainVals[i + 1] = Math.round(maxVal / 9 + maxVal / 9 * i);
+        }
+        domainVals[7] = maxVal;
     }
-    // TODO: more consistent scale; scaleLog()?
-    domainVals[7] = maxVal;
-    // console.log('domainVals', domainVals);
+
+    if (first) {
+        originalDomain = domainVals;
+    }
     color = d3.scaleThreshold(domainVals,
-        d3.schemeOranges[9])
-    ;
-    //
-    // color = d3.scalePow()
-    //     .exponent(0.3)
-    //     .domain(domainVals)
-    //     .range(d3.schemeOranges[9])
-    // ;
+        d3.schemeOranges[9]);
 
     let legendVals = [];
     for (let i = 0; i < domainVals.length - 1; i++) {
         legendVals.push(`${domainVals[i].toLocaleString()}-${(domainVals[i + 1] - 1).toLocaleString()}`)
     }
+
     legendVals.push(maxVal.toLocaleString() + '+');
 
-    legend_a = svg.selectAll('.legend')
+    setLegend(legendVals);
+
+    circles.attr('fill', d => {
+            let cleaned = d.split('-')[0];
+            cleaned = cleaned.replace(',', '');
+            cleaned = cleaned.replace('+', '');
+            return color(parseInt(cleaned))
+        })
+}
+
+function dateLegend() {
+    if (removeLegend) {
+        d3.selectAll('.legend').remove();
+    } else {
+        removeLegend = true;
+    }
+
+    let dataValues = Object.values(mapData);
+
+    let maxVal = Math.max(...dataValues);
+    // console.log(maxVal);
+
+    let domainVals;
+    if (totalCases === 0) {
+        return;
+    } else if (totalCases < 9 || maxVal < 9) {
+        domainVals = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    } else {
+       domainVals = [1];
+        for (let i = 0; i < 6; i++) {
+            domainVals[i + 1] = Math.round(maxVal / 9 + maxVal / 9 * i);
+        }
+        domainVals[7] = maxVal;
+    }
+
+    color = d3.scaleThreshold(domainVals,
+        d3.schemeOranges[9]);
+
+    let legendVals = [];
+    for (let i = 0; i < domainVals.length - 1; i++) {
+        if (totalCases < 9) {
+            legendVals.push(domainVals[i].toLocaleString())
+        } else {
+            legendVals.push(`${domainVals[i].toLocaleString()}-${(domainVals[i + 1] - 1).toLocaleString()}`)
+        }
+    }
+    if (totalCases > 9 && maxVal > 9) {
+        legendVals.push(maxVal.toLocaleString() + '+');
+    }
+
+    if (totalCases.length < 9 || maxVal < 9) {
+        legendVals = domainVals;
+    }
+
+    setLegend(legendVals);
+
+     if (totalCases < 9 || maxVal < 9) {
+         circles.attr('fill', d => color(d))
+     } else {
+         circles.attr('fill', d => {
+                 let cleaned = d.split('-')[0];
+                 cleaned = cleaned.replace(',', '');
+                 cleaned = cleaned.replace('+', '');
+                 return color(parseInt(cleaned))
+             })
+     }
+}
+
+function setLegend(legendVals) {
+    legend = svg.selectAll('.legend')
         .data(legendVals)
         .enter().append('g')
         .attr('class', 'legend')
         .attr('transform', (d, i) => `translate(${width - 300}, ${i * 20})`)
     ;
 
-    legend_a.exit().remove();
+    legend.exit().remove();
 
-    legend_a.append('text').text(d => d)
+    legend.append('text').text(d => d)
         .attr('transform', 'translate(15, 5)')
         .attr('class', 'legend-text');
 
-    legend_a.append('circle')
-        .attr('fill', d => {
-            let cleaned = d.split('-')[0];
-            cleaned = cleaned.replace(',', '');
-            cleaned = cleaned.replace('+', '');
-            return color(parseInt(cleaned))
-        })
+    circles = legend.append('circle')
         .style('stroke', 'black')
         .attr('cx', 5)
         .attr('cy', 0)
@@ -176,6 +257,8 @@ function setLegend() {
 
 let first = true;
 let onDays = false;
+let totalCases;
+let totalDeaths;
 
 function getData() {
     let date_type = d3.select('#date-type-select').node().value;
@@ -205,24 +288,24 @@ function getData() {
             // console.log('cases', json['cases']);
             mapData = json['cases'];
             deathData = json['deaths'];
+            totalCases = json['total_cases'];
+            totalDeaths = json['total_deaths'];
+            d3.select('#case-total').text('Total Cases: ' + totalCases.toLocaleString());
+            d3.select('#death-total').text('Total Deaths: ' + totalDeaths.toLocaleString());
+            d3.select('#current-date').text(parsed);
             if (!isNaN(mapData['Detroit'])) {
                 mapData['Wayne'] += mapData['Detroit'];
             }
-            if (first || date_type === 'date') {
-                setLegend();
-                first = false;
+            if (date_type === 'date') {
+                dateLegend();
+                onDays = date_type === 'date';
             } else {
-                if (onDays === true) {
+                if (first || onDays === true) {
+                    first = false;
                     onDays = false;
-                    setLegend();
+                    totalLegend();
                 }
             }
-
-            onDays = date_type === 'date';
-            d3.select('#case-total').text('Total Cases: ' + json['total_cases'].toLocaleString());
-            d3.select('#death-total').text('Total Deaths: ' + json['total_deaths'].toLocaleString());
-            d3.select('#current-date').text(parsed);
-
             updateMap();
 
         });
@@ -252,20 +335,22 @@ function createMap() {
         .attr('d', path)
     ;
 
-
     getData();
 
     svg.call(tip);
 }
 
 d3.select('#current-date').text(max_date);
+if (d3.select('#date-type-select').node().value !== 'total') {
+    d3.select('#date-type-select').node().value = 'total';
+}
 // setSlider();
 createMap();
 
 function updateMap() {
 
     caseInfo = mapData;
-    states.transition().duration(250).attr('fill', d => colorFunction(d, mapData))
+    states.transition().duration(250).attr('fill', d => colorFunction(d))
 
 }
 
@@ -329,11 +414,29 @@ async function showProgression() {
     d3.select('#last-btn').attr('disabled', true);
     d3.select('#first-btn').attr('disabled', true);
     d3.select('#prev-btn').attr('disabled', true);
+    d3.select('#progress-btn').attr('disabled', true);
     for (let i = 0; i < dates.length; i++) {
         d3.select('#current-date').text(dates[i]);
         getData();
-        await new Promise(r => setTimeout(r, 450));
+        await new Promise(r => setTimeout(r, 750));
     }
     d3.select('#prev-btn').attr('disabled', null);
     d3.select('#first-btn').attr('disabled', null);
+    d3.select('#progress-btn').attr('disabled', null);
 }
+
+document.addEventListener('keyup', (event) => {
+    let min = new Date(min_date.replace(/-/g, '\/'));
+    let max = new Date(max_date.replace(/-/g, '\/'));
+    let currentDate = d3.select('#current-date').text();
+    if (event.key === 'ArrowRight') {
+        if (currentDate !== max.toISOString().split('T')[0]) {
+            nextDate();
+        }
+    } else if (event.key === 'ArrowLeft') {
+        if (currentDate !== min.toISOString().split('T')[0]) {
+            backDate();
+        }
+    }
+});
+
