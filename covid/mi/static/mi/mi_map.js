@@ -350,7 +350,15 @@ createMap();
 function updateMap() {
 
     caseInfo = mapData;
-    states.transition().duration(250).attr('fill', d => colorFunction(d))
+    states.transition()
+        .duration(250)
+        .attr('fill', d => colorFunction(d));
+    // states.append('text')
+    // .attr("transform", function(d) {console.log(d); return "translate(" + projection(d.geometry.coordinates) + ")"; })
+    // .attr("dy", ".35em")
+    //     .style('color', 'black')
+    //     .style('font-size', '20px')
+    //     .text(d => d.properties['NAME'])
 
 }
 

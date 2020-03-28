@@ -1,5 +1,7 @@
 from django.contrib import admin
-from mi.models import Age, ContactBool, Sex, County, Case, TravelType, Death, Event
+from mi.models import Age, ContactBool, Sex, County, Case, TravelType, Death, Event, DateTotal
+
+
 # Register your models here.
 
 
@@ -23,3 +25,4 @@ admin.site.register(Case)
 admin.site.register(Death)
 admin.site.register(TravelType)
 admin.site.register(Event)
+admin.site.register(DateTotal)

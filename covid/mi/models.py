@@ -1,8 +1,10 @@
 import datetime
+import pandas as pd
 
 from django.db import models
 
 # Create your models here.
+from django.db.models import Sum
 
 
 class County(models.Model):
@@ -158,6 +160,140 @@ class Death(models.Model):
         death = cls(date=date, county=County.objects.get(county=county),
                     high_risk=high_risk, high_risk_type=high_risk_type)
         return death
+
+
+class DateTotal(models.Model):
+    date = models.DateField()
+    county = models.ForeignKey(to=County, on_delete=models.CASCADE)
+    cases = models.IntegerField()
+    deaths = models.IntegerField()
+
+    def __str__(self):
+        return f'{self.date} - {self.county} - {str(self.cases)} cases, {str(self.deaths)} deaths'
+
+    @staticmethod
+    def load_data_path(from_date: datetime.date = None):
+        """
+        Loads totals from csv file in data - data/date_totals.csv
+        :param from_date: if populated, will only start adding cases >= specified date.
+        :return: True if successful
+        """
+        if not from_date:
+            from_date = datetime.date.today()
+        path = r'../data/date_totals.csv'
+        with open(path) as f:
+            data = f.readlines()
+            for line in data[1:]:
+                # remove new line character at end and set to title case
+                split_line = line.replace('\n', '').split(',')
+                if from_date:
+                    if datetime.datetime.strptime(split_line[0], '%Y-%m-%d').date() < from_date:
+                        continue
+                new_info = DateTotal.create(*split_line)
+                new_info.save()
+        return True
+
+    @staticmethod
+    def get_today_totals():
+        website = 'https://www.michigan.gov/coronavirus/0,9753,7-406-98163_98173---,00.html'
+        df: pd.DataFrame = pd.read_html(website)[0]  # should be at least 2 tables; totals is first one
+        today = datetime.date.today().strftime('%Y-%m-%d')
+        df['date'] = today
+        df.fillna(0, inplace=True)
+        df = df[['date', 0, 1, 2]]
+        df.to_csv(f'../data/totals_{today}_raw.csv', index=False, header=False)
+        # yesterday = datetime.date.today() - datetime.timedelta(days=1)
+
+        totals = DateTotal.objects.values('county__county')\
+            .annotate(case_total=Sum('cases'), death_total=Sum('deaths'))
+
+        totals_dict = {x['county__county']: {'cases': x['case_total'],
+                                             'deaths': x['death_total']} for x in totals}
+        new_dict = {}
+        for i in df.index:
+            county = df.at[i, 0]
+            county = DateTotal.clean_county(county)
+            cases = df.at[i, 1]
+            deaths = df.at[i, 2]
+            new_dict[county] = {'cases': cases, 'deaths': deaths}
+
+        dates = []
+        counties = []
+        cases = []
+        deaths = []
+        for k, v in new_dict.items():
+            if k.upper() == 'COUNTY':
+                continue
+            dates.append(today)
+            counties.append(k)
+            if totals_dict.get(k):
+                case_count = int(v['cases']) - totals_dict[k]['cases']
+                death_count = int(v['deaths']) - totals_dict[k]['deaths']
+            else:
+                case_count = int(v['cases'])
+                death_count = int(v['deaths'])
+            cases.append(case_count)
+            deaths.append(death_count)
+
+        data_dict = {'dates': dates, 'county': counties, 'cases': cases, 'deaths': deaths}
+        data = pd.DataFrame(data_dict)
+
+        data.to_csv(f'../data/totals_{today}.csv', index=False)
+        return True
+
+    @staticmethod
+    def clean_county(county):
+        if county.upper() == 'OUT OF STATE':
+            county = 'Non-MI'
+        elif county.upper() == 'DETROIT CITY':
+            county = 'Detroit'
+        elif county.upper() == 'BAY COUNTY':
+            county = 'Bay'
+        elif county.upper() == 'OTHER':
+            county = 'Unknown'
+        return county
+
+    @staticmethod
+    def load_today_totals():
+        today = datetime.date.today().strftime('%Y-%m-%d')
+        path = f'../data/totals_{today}.csv'
+        with open(path) as f:
+            data = f.readlines()
+            for line in data[2:]:
+                # remove new line character at end and set to title case
+                split_line = line.replace('\n', '').split(',')
+                county = split_line[1]
+                if county.upper() == 'TOTAL':
+                    continue
+                county = DateTotal.clean_county(county)
+
+                cases = split_line[2]
+                deaths = split_line[3]
+
+                new_info = DateTotal.create(date=today,
+                                            county=county,
+                                            cases=cases,
+                                            deaths=deaths)
+                new_info.save()
+        return True
+
+    @classmethod
+    def create(cls, date, county, cases, deaths):
+        """Convenience class to add a new DateTotal quickly. Does not save."""
+        if County.objects.filter(county=county).exists():
+            db_county = County.objects.get(county=county)
+        else:
+            new_county = County.objects.create(county=county)
+            new_county.save()
+            db_county = County.objects.get(county=county)
+
+        case = cls(
+                date=date,
+                county=db_county,
+                cases=cases,
+                deaths=deaths
+                )
+        return case
 
 
 class Event(models.Model):
