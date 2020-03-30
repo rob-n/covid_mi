@@ -1,7 +1,7 @@
 import datetime
 import json
 
-from django.db.models import Count, Max, Min, Sum
+from django.db.models import Count, Max, Min, Sum, Q
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views import generic
@@ -51,12 +51,12 @@ class CaseList(APIView):
 
     def post(self, request, format=None):
         if request.data['date_type'] == 'date':
-            totals = DateTotal.objects.filter(date=(request.data['end_date']))
+            totals = DateTotal.objects.filter(date=(request.data['end_date'])) \
+                .filter(Q(cases__gt=0) | Q(deaths__gt=0))
         else:
             totals = DateTotal.objects.filter(date__range=('2020-03-10', request.data['end_date']))
 
-        sums = DateTotal.objects.all().aggregate(cases=Sum('cases'),
-                                                 deaths=Sum('deaths'))
+        sums = totals.aggregate(cases=Sum('cases'), deaths=Sum('deaths'))
         case_total = sums['cases']
         cases = totals.values('county__county').annotate(total=Sum('cases'))
 

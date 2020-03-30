@@ -156,15 +156,17 @@ function totalLegend() {
     if (first) {
         originalDomain = domainVals;
     }
+    domainVals = [1, 10, 25, 50, 100, 500, 1000, 2500, 500000];
     color = d3.scaleThreshold(domainVals,
         d3.schemeOranges[9]);
 
     let legendVals = [];
     for (let i = 0; i < domainVals.length - 1; i++) {
-        legendVals.push(`${domainVals[i].toLocaleString()}-${(domainVals[i + 1] - 1).toLocaleString()}`)
+        legendVals.push(`${domainVals[i].toLocaleString()} to ${(domainVals[i + 1] - 1).toLocaleString()}`)
     }
 
-    legendVals.push(maxVal.toLocaleString() + '+');
+    legendVals[legendVals.length - 1] = legendVals[legendVals.length - 1].split(' ')[0] + '+';
+    // legendVals.push(maxVal.toLocaleString() + '+');
 
     setLegend(legendVals);
 
@@ -209,7 +211,7 @@ function dateLegend() {
         if (totalCases < 9) {
             legendVals.push(domainVals[i].toLocaleString())
         } else {
-            legendVals.push(`${domainVals[i].toLocaleString()}-${(domainVals[i + 1] - 1).toLocaleString()}`)
+            legendVals.push(`${domainVals[i].toLocaleString()} to ${(domainVals[i + 1] - 1).toLocaleString()}`)
         }
     }
     if (totalCases > 9 && maxVal > 9) {

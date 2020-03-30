@@ -249,7 +249,7 @@ class DateTotal(models.Model):
             county = 'Detroit'
         elif county.upper() == 'BAY COUNTY':
             county = 'Bay'
-        elif county.upper() == 'OTHER':
+        elif county.upper()[:5] == 'OTHER':
             county = 'Unknown'
         return county
 
