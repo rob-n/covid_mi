@@ -215,7 +215,11 @@ class DateTotal(models.Model):
             county = DateTotal.clean_county(county)
             cases = df.at[i, 1]
             deaths = df.at[i, 2]
-            new_dict[county] = {'cases': cases, 'deaths': deaths}
+            if new_dict.get(county):
+                new_dict[county]['cases'] = str(int(new_dict[county]['cases']) + int(cases))
+                new_dict[county]['deaths'] = str(int(new_dict[county]['deaths']) + int(deaths))
+            else:
+                new_dict[county] = {'cases': cases, 'deaths': deaths}
 
         dates = []
         counties = []
@@ -259,7 +263,7 @@ class DateTotal(models.Model):
         path = f'../data/totals_{today}.csv'
         with open(path) as f:
             data = f.readlines()
-            for line in data[2:]:
+            for line in data[1:]:
                 # remove new line character at end and set to title case
                 split_line = line.replace('\n', '').split(',')
                 county = split_line[1]
