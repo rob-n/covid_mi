@@ -1,4 +1,6 @@
 import datetime
+import os
+
 import pandas as pd
 
 from django.db import models
@@ -193,6 +195,10 @@ class DateTotal(models.Model):
                 new_info.save()
         return True
 
+    @classmethod
+    def base_dir(cls):
+        return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
     @staticmethod
     def get_today_totals():
         website = 'https://www.michigan.gov/coronavirus/0,9753,7-406-98163_98173---,00.html'
@@ -200,8 +206,9 @@ class DateTotal(models.Model):
         today = datetime.date.today().strftime('%Y-%m-%d')
         df['date'] = today
         df.fillna(0, inplace=True)
-        df = df[['date', 0, 1, 2]]
-        df.to_csv(f'../data/totals_{today}_raw.csv', index=False, header=False)
+        df = df[['date', 'County', 'Cases', 'Reported Deaths']]
+        df.to_csv(f'{os.path.join(DateTotal.base_dir())}/mi/data/totals/totals_{today}_raw.csv',
+                  index=False, header=False)
         # yesterday = datetime.date.today() - datetime.timedelta(days=1)
 
         totals = DateTotal.objects.values('county__county')\
@@ -211,10 +218,10 @@ class DateTotal(models.Model):
                                              'deaths': x['death_total']} for x in totals}
         new_dict = {}
         for i in df.index:
-            county = df.at[i, 0]
+            county = df.at[i, 'County']
             county = DateTotal.clean_county(county)
-            cases = df.at[i, 1]
-            deaths = df.at[i, 2]
+            cases = df.at[i, 'Cases']
+            deaths = df.at[i, 'Reported Deaths']
             if new_dict.get(county):
                 new_dict[county]['cases'] = str(int(new_dict[county]['cases']) + int(cases))
                 new_dict[county]['deaths'] = str(int(new_dict[county]['deaths']) + int(deaths))
@@ -242,7 +249,7 @@ class DateTotal(models.Model):
         data_dict = {'dates': dates, 'county': counties, 'cases': cases, 'deaths': deaths}
         data = pd.DataFrame(data_dict)
 
-        data.to_csv(f'../data/totals_{today}.csv', index=False)
+        data.to_csv(f'{DateTotal.base_dir()}/mi/data/totals/totals_{today}.csv', index=False)
         return True
 
     @staticmethod
@@ -260,14 +267,14 @@ class DateTotal(models.Model):
     @staticmethod
     def load_today_totals():
         today = datetime.date.today().strftime('%Y-%m-%d')
-        path = f'../data/totals_{today}.csv'
+        path = f'{DateTotal.base_dir()}/mi/data/totals/totals_{today}.csv'
         with open(path) as f:
             data = f.readlines()
             for line in data[1:]:
                 # remove new line character at end and set to title case
                 split_line = line.replace('\n', '').split(',')
                 county = split_line[1]
-                if county.upper() == 'TOTAL':
+                if county.upper()[:5] == 'TOTAL':
                     continue
                 county = DateTotal.clean_county(county)
 
