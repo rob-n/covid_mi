@@ -39,7 +39,7 @@ aside {
     display: grid;
     /*grid-template-rows: [title] 15% [cases] 5% [deaths] 10% [date] 10% [gap] 50% [foot] 7% ;*/
     /*grid-template-rows: auto;*/
-    grid-template-rows: 12% 5% 10% 10% 45% auto;
+    grid-template-rows: 12% 5% 10% 10% 35% 10% auto;
     padding: 1em;
     border: darkgray 1px solid;
     text-align: center;
