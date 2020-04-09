@@ -297,6 +297,7 @@ function getData() {
             d3.select('#current-date').text(parsed);
             if (!isNaN(mapData['Detroit'])) {
                 mapData['Wayne'] += mapData['Detroit'];
+                deathData['Wayne'] += deathData['Detroit'];
             }
             if (date_type === 'date') {
                 dateLegend();
