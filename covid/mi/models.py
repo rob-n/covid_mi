@@ -266,6 +266,10 @@ class DateTotal(models.Model):
             county = 'St. Joseph'
         elif 'CLAIR' in county.upper():
             county = 'St. Clair'
+        elif 'MDOC' in county.upper():
+            county = 'MDOC'
+        elif 'FCI' in county.upper():
+            county = 'FCI'
         return county
 
     @staticmethod

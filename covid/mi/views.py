@@ -51,8 +51,7 @@ class CaseList(APIView):
 
     def post(self, request, format=None):
         if request.data['date_type'] == 'date':
-            totals = DateTotal.objects.filter(date=(request.data['end_date'])) \
-                .filter(Q(cases__gt=0) | Q(deaths__gt=0))
+            totals = DateTotal.objects.filter(date=(request.data['end_date']))
         else:
             totals = DateTotal.objects.filter(date__range=('2020-03-10', request.data['end_date']))
 
