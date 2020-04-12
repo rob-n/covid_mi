@@ -19,7 +19,7 @@ let csrfToken = getCookie('csrftoken');
 
 let margin = ({top: 70, right: 30, bottom: 30, left: 50});
 let height = 625 - margin.top - margin.bottom;
-let width = 955 - margin.left - margin.right;
+let width = 805 - margin.left - margin.right;
 
 let svg = d3.select('#map-div').append('svg')
     .attr('height', height)
@@ -241,7 +241,7 @@ function setLegend(legendVals) {
         .data(legendVals)
         .enter().append('g')
         .attr('class', 'legend')
-        .attr('transform', (d, i) => `translate(${width - 300}, ${i * 20})`)
+        .attr('transform', (d, i) => `translate(${width - 140}, ${i * 20})`)
     ;
 
     legend.exit().remove();
@@ -429,7 +429,7 @@ async function showProgression() {
     for (let i = 0; i < dates.length; i++) {
         d3.select('#current-date').text(dates[i]);
         getData();
-        await new Promise(r => setTimeout(r, 750));
+        await new Promise(r => setTimeout(r, 550));
     }
     d3.select('#prev-btn').attr('disabled', null);
     d3.select('#first-btn').attr('disabled', null);
