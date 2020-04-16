@@ -206,7 +206,7 @@ class DateTotal(models.Model):
         today = datetime.date.today().strftime('%Y-%m-%d')
         df['date'] = today
         df.fillna(0, inplace=True)
-        df = df[['date', 'County', 'Cases', 'Reported Deaths']]
+        df = df[['date', 'County', 'Confirmed Cases', 'Reported Deaths']]
         df.to_csv(f'{os.path.join(DateTotal.base_dir())}/mi/data/totals/totals_{today}_raw.csv',
                   index=False, header=False)
         # yesterday = datetime.date.today() - datetime.timedelta(days=1)
@@ -220,7 +220,7 @@ class DateTotal(models.Model):
         for i in df.index:
             county = df.at[i, 'County']
             county = DateTotal.clean_county(county)
-            cases = df.at[i, 'Cases']
+            cases = df.at[i, 'Confirmed Cases']
             deaths = df.at[i, 'Reported Deaths']
             if new_dict.get(county):
                 new_dict[county]['cases'] = str(int(new_dict[county]['cases']) + int(cases))
