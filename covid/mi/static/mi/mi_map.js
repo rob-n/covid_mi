@@ -1,4 +1,3 @@
-
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -22,6 +21,13 @@ let height = 625 - margin.top - margin.bottom;
 let width = 805 - margin.left - margin.right;
 
 let svg = d3.select('#map-div').append('svg')
+    .attr('height', height)
+    .attr('width', width + margin.left + margin.right)
+    .append('g')
+    .attr('transform', `translate(${margin.left}, ${margin.top * 4})`);
+
+
+let lineSvg = d3.select('#line-div').append('svg')
     .attr('height', height)
     .attr('width', width + margin.left + margin.right)
     .append('g')
@@ -146,7 +152,7 @@ function totalLegend() {
     if (originalDomain !== undefined) {
         domainVals = originalDomain;
     } else {
-       domainVals = [1];
+        domainVals = [1];
         for (let i = 0; i < 6; i++) {
             domainVals[i + 1] = Math.round(maxVal / 9 + maxVal / 9 * i);
         }
@@ -171,11 +177,11 @@ function totalLegend() {
     setLegend(legendVals);
 
     circles.attr('fill', d => {
-            let cleaned = d.split('-')[0];
-            cleaned = cleaned.replace(',', '');
-            cleaned = cleaned.replace('+', '');
-            return color(parseInt(cleaned))
-        })
+        let cleaned = d.split('-')[0];
+        cleaned = cleaned.replace(',', '');
+        cleaned = cleaned.replace('+', '');
+        return color(parseInt(cleaned))
+    })
 }
 
 function dateLegend() {
@@ -196,7 +202,7 @@ function dateLegend() {
     } else if (totalCases < 9 || maxVal < 9) {
         domainVals = [0, 1, 2, 3, 4, 5, 6, 7, 8]
     } else {
-       domainVals = [1];
+        domainVals = [1];
         for (let i = 0; i < 6; i++) {
             domainVals[i + 1] = Math.round(maxVal / 9 + maxVal / 9 * i);
         }
@@ -224,16 +230,16 @@ function dateLegend() {
 
     setLegend(legendVals);
 
-     if (totalCases < 9 || maxVal < 9) {
-         circles.attr('fill', d => color(d))
-     } else {
-         circles.attr('fill', d => {
-                 let cleaned = d.split('-')[0];
-                 cleaned = cleaned.replace(',', '');
-                 cleaned = cleaned.replace('+', '');
-                 return color(parseInt(cleaned))
-             })
-     }
+    if (totalCases < 9 || maxVal < 9) {
+        circles.attr('fill', d => color(d))
+    } else {
+        circles.attr('fill', d => {
+            let cleaned = d.split('-')[0];
+            cleaned = cleaned.replace(',', '');
+            cleaned = cleaned.replace('+', '');
+            return color(parseInt(cleaned))
+        })
+    }
 }
 
 function setLegend(legendVals) {
@@ -347,7 +353,7 @@ d3.select('#current-date').text(max_date);
 if (d3.select('#date-type-select').node().value !== 'total') {
     d3.select('#date-type-select').node().value = 'total';
 }
-// setSlider();
+
 createMap();
 
 function updateMap() {
@@ -366,6 +372,7 @@ function updateMap() {
 }
 
 let dateOffset = (24 * 60 * 60 * 1000);
+
 function backDate() {
     let currentDate = d3.select('#current-date').text();
     d3.select('#next-btn').attr('disabled', null);
@@ -451,3 +458,90 @@ document.addEventListener('keyup', (event) => {
     }
 });
 
+function createLine() {
+
+    let parser = d3.timeParse('%Y-%m-%d')
+
+    let xScale = d3.scaleTime()
+        .domain(d3.extent(dates, d => parser(d)))
+        .range([0, width]);
+
+    let xAxis = lineSvg.append('g')
+        // .attr('transform', `translate(${-width / 2 + 31}, ${-20})`)
+        .attr('transform', `translate(${0}, ${margin.top + margin.bottom})`)
+        .call(d3.axisBottom(xScale).ticks(10));
+
+    let min = 10;
+    let max = 15000;
+
+    let yScale = d3.scaleLinear()
+        .domain([min - 10, max + 10])
+        .range([height, 0])
+
+    let yAxis = lineSvg.append('g')
+        .attr('transform', `translate(${0}, ${-height + margin.top + margin.bottom})`)
+        .call(d3.axisLeft(yScale))
+
+    let countyLine = d3.line()
+        .x(d => {
+            // console.log(d);
+            // console.log('xs', xScale(d['date']));
+            return xScale(d['date'])
+        })
+        .y(d => {
+            // console.log('ys', d.cases);
+            return yScale(d['totals']) - height - margin.top - margin.bottom
+        })
+
+    let lineColor = d3.scaleOrdinal(d3.schemeCategory10);
+    // lineColor.domain(lineArray.map(c => c.county))
+    lineColor.domain([0, 10])
+
+    let dateArray = [];
+    lineDates = c_lineDates
+    console.log(lineDates);
+    dateArray[0] = {'count': 'cases', 'values': []}
+    dateArray[1] = {'count': 'deaths', 'values': []}
+
+    for (const date in lineDates) {
+        dateArray[0]['values'].push({'date': parser(lineDates[date]['date']),
+                                     'totals': lineDates[date]['cases']})
+        dateArray[1]['values'].push({'date': parser(lineDates[date]['date']),
+                                     'totals': lineDates[date]['deaths']})
+    }
+
+    console.log('dateArray', dateArray);
+
+    let cLine = lineSvg.selectAll('.county-line')
+        .data(dateArray)
+        .enter().append('g')
+        .attr('class', 'county-line')
+    ;
+
+    // .attr('fill', d => colorFunction(d));
+
+    cLine.append('path')
+        .attr('class', 'line')
+        .style('fill', 'none')
+        .style('stroke-width', '2px')
+        // .style('stroke', 'black')
+        .style('stroke', d => lineColor(d.count))
+        .attr('d', d => countyLine(d.values));
+
+    cLine.selectAll('circle')
+        .data(d => d.values)
+        .enter().append('circle')
+        .attr('class', 'line-circle')
+        .attr('cx', d => xScale(d.date))
+        .attr('cy', d => yScale(d.totals) - height)
+        .attr('r', 4)
+        // .attr('fill', 'red')
+        .style('fill', (d) => {
+            // console.log(d);
+            return lineColor(d.count)
+        })
+        // .on('mouseover', d => lineTip.show(d))
+        // .on('mouseout', d => lineTip.hide(d))
+    // ;
+}
+createLine();

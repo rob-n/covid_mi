@@ -1,7 +1,7 @@
 import datetime
 import json
 
-from django.db.models import Count, Max, Min, Sum, Q
+from django.db.models import Count, Max, Min, Sum, Q, Window, F
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views import generic
@@ -31,13 +31,35 @@ class IndexView(generic.ListView):
         last_date = DateTotal.objects.aggregate(max_date=Max('date'))['max_date']
         min_date = DateTotal.objects.aggregate(min_date=Min('date'))['min_date']
         dates_list = [x[0].strftime('%Y-%m-%d') for x in dates]
+
+        date_totals_qs = DateTotal.objects.values('date').annotate(cases=Sum('cases'),
+                                                                   deaths=Sum('deaths'))
+
+        date_totals = {x['date'].strftime('%Y-%m-%d'):
+                       {'cases': x['cases'],
+                        'deaths': x['deaths'],
+                        'date': x['date'].strftime('%Y-%m-%d')}
+                       for x in date_totals_qs}
+
+        cum_sum = DateTotal.objects.\
+            annotate(c_cases=Window(Sum('cases'), order_by=F('date').asc()))\
+            .annotate(c_deaths=Window(Sum('deaths'), order_by=F('date').asc()))\
+            .values('date', 'c_cases', 'c_deaths').order_by('date')
+
+        c_date_totals = {x['date'].strftime('%Y-%m-%d'):
+                         {'cases': x['c_cases'],
+                          'deaths': x['c_deaths'],
+                          'date': x['date'].strftime('%Y-%m-%d')} for x in cum_sum}
+
         context = {
             'cases': case_count,
             'deaths': death_count,
             'map_json': map_json,
             'dates': dates_list,
             'last_date': last_date,
-            'first_date': min_date
+            'first_date': min_date,
+            'date_totals': json.dumps(date_totals),
+            'c_date_totals': json.dumps(c_date_totals)
         }
         return context
 

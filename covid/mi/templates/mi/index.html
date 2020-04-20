@@ -53,6 +53,9 @@
                 <button id="last-btn" disabled onclick="lastDate()">>></button>
             </div>
         </div>
+        <div id="line-div">
+
+        </div>
     </div>
 </main>
 </body>
@@ -68,6 +71,8 @@
     let max_date = '{{ data.last_date | safe }}';
     let min_date = '{{ data.first_date | safe }}';
     let jsonUrl = "{% url 'case-detail' %}";
+    let lineDates = {{ data.date_totals | safe }};
+    let c_lineDates = {{ data.c_date_totals | safe }}
 </script>
 <script src="{% static 'mi/mi_map.js' %}"></script>
 </html>
