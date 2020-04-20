@@ -2,6 +2,7 @@ import datetime
 import os
 
 import pandas as pd
+import numpy as np
 
 from django.db import models
 
@@ -202,11 +203,14 @@ class DateTotal(models.Model):
     @staticmethod
     def get_today_totals():
         website = 'https://www.michigan.gov/coronavirus/0,9753,7-406-98163_98173---,00.html'
-        df: pd.DataFrame = pd.read_html(website)[0]  # should be at least 2 tables; totals is first one
+        df: pd.DataFrame = pd.read_html(website, header=None)[0]  # should be at least 2 tables; totals is first one
         today = datetime.date.today().strftime('%Y-%m-%d')
+        df = pd.DataFrame(np.row_stack([df.columns, df.values]), columns=['0', '1', '2'])
+        # df = df[['date', '0', '1', '2']]
+        # df = df[['date', 'County', 'Confirmed Cases', 'Reported Deaths']]
         df['date'] = today
         df.fillna(0, inplace=True)
-        df = df[['date', 'County', 'Confirmed Cases', 'Reported Deaths']]
+        df.loc[0]['2'] = 0 if 'named' in df.loc[0]['2'] else df.loc[0]['2']  # no header rows any more
         df.to_csv(f'{os.path.join(DateTotal.base_dir())}/mi/data/totals/totals_{today}_raw.csv',
                   index=False, header=False)
         # yesterday = datetime.date.today() - datetime.timedelta(days=1)
@@ -218,10 +222,10 @@ class DateTotal(models.Model):
                                              'deaths': x['death_total']} for x in totals}
         new_dict = {}
         for i in df.index:
-            county = df.at[i, 'County']
+            county = df.at[i, '0']
             county = DateTotal.clean_county(county)
-            cases = df.at[i, 'Confirmed Cases']
-            deaths = df.at[i, 'Reported Deaths']
+            cases = df.at[i, '1']
+            deaths = df.at[i, '2']
             if new_dict.get(county):
                 new_dict[county]['cases'] = str(int(new_dict[county]['cases']) + int(cases))
                 new_dict[county]['deaths'] = str(int(new_dict[county]['deaths']) + int(deaths))
