@@ -32,15 +32,6 @@ class IndexView(generic.ListView):
         min_date = DateTotal.objects.aggregate(min_date=Min('date'))['min_date']
         dates_list = [x[0].strftime('%Y-%m-%d') for x in dates]
 
-        date_totals_qs = DateTotal.objects.values('date').annotate(cases=Sum('cases'),
-                                                                   deaths=Sum('deaths'))
-
-        date_totals = {x['date'].strftime('%Y-%m-%d'):
-                           {'cases': x['cases'],
-                            'deaths': x['deaths'],
-                            'date': x['date'].strftime('%Y-%m-%d')}
-                       for x in date_totals_qs}
-
         cum_sum = DateTotal.objects. \
             annotate(c_cases=Func(Sum('cases'),
                                   template='%(expressions)s OVER (ORDER BY %(order_by)s)',
@@ -66,7 +57,6 @@ class IndexView(generic.ListView):
             'last_date': last_date,
             'first_date': min_date,
             'date_totals': json.dumps(c_date_totals),
-            'c_date_totals': json.dumps(date_totals),
             'counties': counties
         }
         return context

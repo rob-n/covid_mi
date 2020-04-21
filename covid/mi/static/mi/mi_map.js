@@ -717,8 +717,8 @@ createLine();
 
 let selector = document.getElementById('county-select');
 
-for (let i = 0; i < countyList.length; i++) {
-    selector.options[i] = new Option(countyList[i], countyList[i])
+for (let i = 1; i < countyList.length + 1; i++) {
+    selector.options[i] = new Option(countyList[i - 1], countyList[i - 1]);
 }
 
 function getLineData(county) {
