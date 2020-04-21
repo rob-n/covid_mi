@@ -23,6 +23,8 @@ let width = 805 - margin.left - margin.right;
 let svg = d3.select('#map-div').append('svg')
     .attr('height', height)
     .attr('width', width + margin.left + margin.right)
+    // .attr('viewbox', `0 0 ${height} ${width + margin.left + margin.right}`)
+    //     .attr('preserveAspectRatio', 'xMidYMin meet')
     .append('g')
     .attr('transform', `translate(${margin.left}, ${margin.top * 4})`)
 ;
@@ -30,7 +32,7 @@ let svg = d3.select('#map-div').append('svg')
 
 let lineSvg = d3.select('#line-div').append('svg')
     .attr('height', height)
-    .attr('width', width + margin.left + margin.right)
+    .attr('width', width + 100 + margin.left + margin.right)
     .append('g')
     // .attr('transform', `translate(${margin.left}, ${margin.top * 4})`)
 ;
@@ -231,6 +233,7 @@ function dateLegend() {
     }
 
     setLegend(legendVals);
+    // console.log(legendVals);
 
     if (totalCases < 9 || maxVal < 9) {
         circles.attr('fill', d => color(d))
@@ -270,6 +273,10 @@ let onDays = false;
 let totalCases;
 let totalDeaths;
 
+function cleanName(county) {
+    return county.replace('.', '').replace(' ', '')
+}
+
 function getData() {
     let date_type = d3.select('#date-type-select').node().value;
     // console.log('setting up ajax...');
@@ -291,10 +298,10 @@ function getData() {
         .then(json => {
             // console.log('back from ajax');
 
-            d3.select('body').style('cursor', '');
-            d3.select('html').style('cursor', '');
-            d3.select('input').style('cursor', '');
-            d3.select("input").attr("disabled", "");
+            d3.selectAll('body').style('cursor', '');
+            d3.selectAll('html').style('cursor', '');
+            d3.selectAll('input').style('cursor', '');
+            d3.selectAll("input").attr("disabled", null);
             // console.log('cases', json['cases']);
             mapData = json['cases'];
             deathData = json['deaths'];
@@ -331,10 +338,17 @@ function createMap() {
         .data(topojson.feature(topography, topography.objects['cb_2015_michigan_county_20m']).features)
         .enter().append('path')
         .attr('stroke', 'black')
+        .attr('class', 'county-bounds')
+        .attr('id', d => {
+            return cleanName(d.properties['NAME']);
+        })
         // .attr('fill', d => colorFunction(d, mapData))
         .attr('d', path.projection(projection))
         .on('mouseover', tip.show)
         .on('mouseout', tip.hide)
+        .on('click', d => {
+            getLineData(d.properties['NAME']);
+        })
     ;
 
     states.exit().attr('fill', 'none');
@@ -348,6 +362,7 @@ function createMap() {
 
     getData();
 
+    // svg.attr('viewbox', `0 0 ${height} ${width + margin.left + margin.right}`)
     svg.call(tip);
 }
 
@@ -477,28 +492,63 @@ let lineTip = d3.tip()
     })
 ;
 
+
+let currentCounty = 'All'
 function createLine() {
 
     let parser = d3.timeParse('%Y-%m-%d')
 
+    let min = 0;
+    let max = 0;
+     let dateArray = [];
+    // lineDates = c_lineDates
+    // console.log(lineDates);
+    dateArray[0] = {'count': 'cases', 'values': []}
+    dateArray[1] = {'count': 'deaths', 'values': []}
+    let newDates = [];
+
+    for (const date in lineDates) {
+        if (lineDates[date]['cases'] > max) {
+            max = lineDates[date]['cases'];
+        }
+        if (lineDates[date]['deaths'] > max) {
+            max = lineDates[date]['deaths'];
+        }
+        if (lineDates[date]['cases'] < min) {
+            lineDates[date]['cases'] = min;
+        }
+        if (lineDates[date]['deaths'] < min) {
+            lineDates[date]['deaths'] = min;
+        }
+        newDates.push(lineDates[date]['date']);
+        dateArray[0]['values'].push({'date': parser(lineDates[date]['date']),
+                                     'totals': lineDates[date]['cases'],
+                                     'count': 'cases'})
+        dateArray[1]['values'].push({'date': parser(lineDates[date]['date']),
+                                     'totals': lineDates[date]['deaths'],
+                                     'count': 'deaths'})
+    }
+
+    // console.log('dateArray', dateArray);
+    // console.log(lineDates);
+
     let xScale = d3.scaleTime()
-        .domain(d3.extent(dates, d => parser(d)))
+        .domain(d3.extent(newDates, d => parser(d)))
         .range([0, width]);
 
     let xAxis = lineSvg.append('g')
         // .attr('transform', `translate(${-width / 2 + 31}, ${-20})`)
         .attr('transform', `translate(${margin.left}, ${height - margin.bottom - 10})`)
+        .attr('class', 'axis')
         .call(d3.axisBottom(xScale).ticks(10));
 
-    let min = 10;
-    let max = 35000;
-
     let yScale = d3.scaleLinear()
-        .domain([min - 10, max + 10])
+        .domain([min, max + d3.max([Math.round(max / 10), 10])])
         .range([height - margin.top, 0])
 
     let yAxis = lineSvg.append('g')
         .attr('transform', `translate(${margin.left}, ${margin.bottom})`)
+        .attr('class', 'axis')
         .call(d3.axisLeft(yScale))
 
     let countyLine = d3.line()
@@ -516,22 +566,7 @@ function createLine() {
     // lineColor.domain(lineArray.map(c => c.county))
     lineColor.domain([0, 10])
 
-    let dateArray = [];
-    lineDates = c_lineDates
-    console.log(lineDates);
-    dateArray[0] = {'count': 'cases', 'values': []}
-    dateArray[1] = {'count': 'deaths', 'values': []}
 
-    for (const date in lineDates) {
-        dateArray[0]['values'].push({'date': parser(lineDates[date]['date']),
-                                     'totals': lineDates[date]['cases'],
-                                     'count': 'cases'})
-        dateArray[1]['values'].push({'date': parser(lineDates[date]['date']),
-                                     'totals': lineDates[date]['deaths'],
-                                     'count': 'deaths'})
-    }
-
-    console.log('dateArray', dateArray);
 
     let cLine = lineSvg.selectAll('.county-line')
         .data(dateArray)
@@ -539,12 +574,23 @@ function createLine() {
         .attr('class', 'county-line')
     ;
 
+
     cLine.append('text')
         .attr('x', width / 2 - margin.left - margin.right)
         .attr('y', margin.bottom - 10)
         .attr('class', 'line-title')
-        .text('Cumulative totals');
+;
+    let titleExtraText = '';
+    if (currentCounty !== 'All') {
+        titleExtraText = ` for ${currentCounty}`
+    }
 
+    let date_type = d3.select('#date-type-select').node().value;
+    if (date_type === 'total') {
+        d3.selectAll('.line-title').text('Cumulative Totals' + titleExtraText);
+    } else {
+        d3.selectAll('.line-title').text('Daily Totals' + titleExtraText);
+    }
     // .attr('fill', d => colorFunction(d));
 
     lineSvg.call(lineTip);
@@ -558,7 +604,7 @@ function createLine() {
     ;
 
     let totalLength = path.node().getTotalLength();
-    console.log(totalLength);
+    // console.log(totalLength);
 
     path.attr('stroke-dashoffset', totalLength)
         .attr('stroke-dasharray', `${totalLength} ${totalLength}`)
@@ -618,11 +664,128 @@ function createLine() {
             .tickSize(-width)
             .tickFormat("")
         )
+    createLineLegend();
 }
+
+function createLineLegend() {
+    d3.selectAll('.line-legend').remove();
+
+    let legendVals = ['cases', 'deaths']
+
+    setLineLegend(legendVals);
+
+}
+
+let lineLegend;
+let lineLegendCircles;
+function setLineLegend(legendVals) {
+    lineLegend = lineSvg.selectAll('.line-legend')
+        .data(legendVals)
+        .enter().append('g')
+        .attr('class', 'line-legend')
+        .attr('transform', (d, i) => `translate(${width + 90}, ${i * 20 + 100})`)
+    ;
+
+    lineLegend.exit().remove();
+
+    lineLegend.append('text').text(d => d.substring(0, 1).toUpperCase() + d.substring(1, d.length))
+        .attr('transform', 'translate(15, 5)')
+        .attr('class', 'line-legend-text')
+        // .style('font-size', '0px')
+        // .transition()
+        //     .duration(3700)
+        //     .style('font-size', '14px')
+    ;
+
+    let lineColor = d3.scaleOrdinal(d3.schemeCategory10);
+    lineColor.domain([0, 10])
+
+    lineLegendCircles = lineLegend.append('circle')
+        .style('stroke', 'black')
+            .attr('cx', 5)
+            .attr('cy', 0)
+            .attr('r', 5)
+        // .transition()
+        //     .duration(3700)
+        //     .attr('r', 5)
+    ;
+
+    lineLegendCircles.attr('fill', d => lineColor(d))
+}
+
 createLine();
 
 let selector = document.getElementById('county-select');
 
-for (let i = 1; i < countyList.length; i++) {
+for (let i = 0; i < countyList.length; i++) {
     selector.options[i] = new Option(countyList[i], countyList[i])
+}
+
+function getLineData(county) {
+
+    let date_type = d3.select('#date-type-select').node().value;
+    if (((county === currentCounty) ||
+        (currentCounty === document.getElementById('county-select').value && county === undefined)) &&
+        (date_type === 'total' !== onDays)) {
+        return;
+    }
+
+    clearLineData();
+
+    // console.log('setting up ajax...');
+    d3.select('body').style('cursor', 'wait');
+    d3.select('html').style('cursor', 'wait');
+    d3.select('input').style('cursor', 'wait');
+    d3.select("input").attr("disabled", "disabled");
+    if (county === undefined) {
+        currentCounty = document.getElementById('county-select').value;
+        let c = {properties: {NAME: currentCounty}}
+        d3.select('#' + cleanName(currentCounty)).attr('fill', colorFunction(c));
+        // document.getElementById('county-select').value = 'All';
+    } else {
+        // d3.select('#' + currentCounty).attr('stroke', 'black');
+        let c = {properties: {NAME: currentCounty}}
+        d3.select('#' + cleanName(currentCounty)).attr('fill', colorFunction(c));
+        // d3.select('#' + currentCounty).attr('stroke-width', '1px');
+       currentCounty = county;
+       document.getElementById('county-select').value = currentCounty;
+        // d3.select('#' + currentCounty).attr('stroke', 'green');
+        // d3.select('#' + currentCounty).attr('stroke-width', '5px');
+    }
+    d3.select('#' + cleanName(currentCounty)).attr('fill', '#5c5b5b');
+    d3.json(growthUrl, {
+        method: "POST",
+        body: JSON.stringify({'county': currentCounty, 'date_type': date_type}),
+        headers: {
+            "X-CSRFToken": csrfToken,
+            "Content-type": "application/json; charset=UTF-8"
+        }
+    })
+        .then(json => {
+            // console.log('back from ajax');
+
+            d3.selectAll('body').style('cursor', '');
+            d3.selectAll('html').style('cursor', '');
+            d3.selectAll('input').style('cursor', '');
+            d3.selectAll("input").attr("disabled", null);
+            // console.log('cases', json['cases']);
+            lineDates = JSON.parse(json['totals']);
+            createLine();
+
+        });
+}
+
+function clearLineData() {
+    d3.selectAll('.grid').remove();
+    d3.selectAll('.county-line').remove();
+    d3.selectAll('.axis').remove();
+    d3.selectAll('.line-legend').remove();
+    d3.selectAll('.line-circle').remove();
+    let c = {properties: {NAME: currentCounty}}
+    d3.select('#' + cleanName(currentCounty)).attr('fill', colorFunction(c));
+}
+
+function resetLineChart() {
+    clearLineData();
+    getLineData('All')
 }

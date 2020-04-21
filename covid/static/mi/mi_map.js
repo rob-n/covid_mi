@@ -1,4 +1,3 @@
-
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -24,8 +23,19 @@ let width = 805 - margin.left - margin.right;
 let svg = d3.select('#map-div').append('svg')
     .attr('height', height)
     .attr('width', width + margin.left + margin.right)
+    // .attr('viewbox', `0 0 ${height} ${width + margin.left + margin.right}`)
+    //     .attr('preserveAspectRatio', 'xMidYMin meet')
     .append('g')
-    .attr('transform', `translate(${margin.left}, ${margin.top * 4})`);
+    .attr('transform', `translate(${margin.left}, ${margin.top * 4})`)
+;
+
+
+let lineSvg = d3.select('#line-div').append('svg')
+    .attr('height', height)
+    .attr('width', width + 100 + margin.left + margin.right)
+    .append('g')
+    // .attr('transform', `translate(${margin.left}, ${margin.top * 4})`)
+;
 
 // let sliderCreated = false;
 // let sliderParams;
@@ -146,7 +156,7 @@ function totalLegend() {
     if (originalDomain !== undefined) {
         domainVals = originalDomain;
     } else {
-       domainVals = [1];
+        domainVals = [1];
         for (let i = 0; i < 6; i++) {
             domainVals[i + 1] = Math.round(maxVal / 9 + maxVal / 9 * i);
         }
@@ -171,11 +181,11 @@ function totalLegend() {
     setLegend(legendVals);
 
     circles.attr('fill', d => {
-            let cleaned = d.split('-')[0];
-            cleaned = cleaned.replace(',', '');
-            cleaned = cleaned.replace('+', '');
-            return color(parseInt(cleaned))
-        })
+        let cleaned = d.split('-')[0];
+        cleaned = cleaned.replace(',', '');
+        cleaned = cleaned.replace('+', '');
+        return color(parseInt(cleaned))
+    })
 }
 
 function dateLegend() {
@@ -196,7 +206,7 @@ function dateLegend() {
     } else if (totalCases < 9 || maxVal < 9) {
         domainVals = [0, 1, 2, 3, 4, 5, 6, 7, 8]
     } else {
-       domainVals = [1];
+        domainVals = [1];
         for (let i = 0; i < 6; i++) {
             domainVals[i + 1] = Math.round(maxVal / 9 + maxVal / 9 * i);
         }
@@ -223,17 +233,18 @@ function dateLegend() {
     }
 
     setLegend(legendVals);
+    // console.log(legendVals);
 
-     if (totalCases < 9 || maxVal < 9) {
-         circles.attr('fill', d => color(d))
-     } else {
-         circles.attr('fill', d => {
-                 let cleaned = d.split('-')[0];
-                 cleaned = cleaned.replace(',', '');
-                 cleaned = cleaned.replace('+', '');
-                 return color(parseInt(cleaned))
-             })
-     }
+    if (totalCases < 9 || maxVal < 9) {
+        circles.attr('fill', d => color(d))
+    } else {
+        circles.attr('fill', d => {
+            let cleaned = d.split('-')[0];
+            cleaned = cleaned.replace(',', '');
+            cleaned = cleaned.replace('+', '');
+            return color(parseInt(cleaned))
+        })
+    }
 }
 
 function setLegend(legendVals) {
@@ -262,6 +273,10 @@ let onDays = false;
 let totalCases;
 let totalDeaths;
 
+function cleanName(county) {
+    return county.replace('.', '').replace(' ', '')
+}
+
 function getData() {
     let date_type = d3.select('#date-type-select').node().value;
     // console.log('setting up ajax...');
@@ -283,10 +298,10 @@ function getData() {
         .then(json => {
             // console.log('back from ajax');
 
-            d3.select('body').style('cursor', '');
-            d3.select('html').style('cursor', '');
-            d3.select('input').style('cursor', '');
-            d3.select("input").attr("disabled", "");
+            d3.selectAll('body').style('cursor', '');
+            d3.selectAll('html').style('cursor', '');
+            d3.selectAll('input').style('cursor', '');
+            d3.selectAll("input").attr("disabled", null);
             // console.log('cases', json['cases']);
             mapData = json['cases'];
             deathData = json['deaths'];
@@ -323,10 +338,17 @@ function createMap() {
         .data(topojson.feature(topography, topography.objects['cb_2015_michigan_county_20m']).features)
         .enter().append('path')
         .attr('stroke', 'black')
+        .attr('class', 'county-bounds')
+        .attr('id', d => {
+            return cleanName(d.properties['NAME']);
+        })
         // .attr('fill', d => colorFunction(d, mapData))
         .attr('d', path.projection(projection))
         .on('mouseover', tip.show)
         .on('mouseout', tip.hide)
+        .on('click', d => {
+            getLineData(d.properties['NAME']);
+        })
     ;
 
     states.exit().attr('fill', 'none');
@@ -340,6 +362,7 @@ function createMap() {
 
     getData();
 
+    // svg.attr('viewbox', `0 0 ${height} ${width + margin.left + margin.right}`)
     svg.call(tip);
 }
 
@@ -347,7 +370,7 @@ d3.select('#current-date').text(max_date);
 if (d3.select('#date-type-select').node().value !== 'total') {
     d3.select('#date-type-select').node().value = 'total';
 }
-// setSlider();
+
 createMap();
 
 function updateMap() {
@@ -366,6 +389,7 @@ function updateMap() {
 }
 
 let dateOffset = (24 * 60 * 60 * 1000);
+
 function backDate() {
     let currentDate = d3.select('#current-date').text();
     d3.select('#next-btn').attr('disabled', null);
@@ -451,3 +475,317 @@ document.addEventListener('keyup', (event) => {
     }
 });
 
+let lineTip = d3.tip()
+    .attr('class', 'd3-tip')
+    .html(function (d) {
+        let total = d.totals;
+        if (d.totals === undefined) {
+            total = 0;
+        }
+        // let deaths = deathData[d.properties['NAME']];
+        // if (deaths === undefined) {
+        //     deaths = 0;
+        // }
+        let info = 'Date: ' + d.date.toISOString().substring(0, 10) + '<br>';
+        info += d.count.substring(0, 1).toUpperCase() + d.count.substring(1) + ': ' + total.toLocaleString() + '<br>';
+        return info
+    })
+;
+
+
+let currentCounty = 'All'
+function createLine() {
+
+    let parser = d3.timeParse('%Y-%m-%d')
+
+    let min = 0;
+    let max = 0;
+     let dateArray = [];
+    // lineDates = c_lineDates
+    // console.log(lineDates);
+    dateArray[0] = {'count': 'cases', 'values': []}
+    dateArray[1] = {'count': 'deaths', 'values': []}
+    let newDates = [];
+
+    for (const date in lineDates) {
+        if (lineDates[date]['cases'] > max) {
+            max = lineDates[date]['cases'];
+        }
+        if (lineDates[date]['deaths'] > max) {
+            max = lineDates[date]['deaths'];
+        }
+        if (lineDates[date]['cases'] < min) {
+            lineDates[date]['cases'] = min;
+        }
+        if (lineDates[date]['deaths'] < min) {
+            lineDates[date]['deaths'] = min;
+        }
+        newDates.push(lineDates[date]['date']);
+        dateArray[0]['values'].push({'date': parser(lineDates[date]['date']),
+                                     'totals': lineDates[date]['cases'],
+                                     'count': 'cases'})
+        dateArray[1]['values'].push({'date': parser(lineDates[date]['date']),
+                                     'totals': lineDates[date]['deaths'],
+                                     'count': 'deaths'})
+    }
+
+    // console.log('dateArray', dateArray);
+    // console.log(lineDates);
+
+    let xScale = d3.scaleTime()
+        .domain(d3.extent(newDates, d => parser(d)))
+        .range([0, width]);
+
+    let xAxis = lineSvg.append('g')
+        // .attr('transform', `translate(${-width / 2 + 31}, ${-20})`)
+        .attr('transform', `translate(${margin.left}, ${height - margin.bottom - 10})`)
+        .attr('class', 'axis')
+        .call(d3.axisBottom(xScale).ticks(10));
+
+    let yScale = d3.scaleLinear()
+        .domain([min, max + d3.max([Math.round(max / 10), 10])])
+        .range([height - margin.top, 0])
+
+    let yAxis = lineSvg.append('g')
+        .attr('transform', `translate(${margin.left}, ${margin.bottom})`)
+        .attr('class', 'axis')
+        .call(d3.axisLeft(yScale))
+
+    let countyLine = d3.line()
+        .x(d => {
+            // console.log(d);
+            // console.log('xs', xScale(d['date']));
+            return xScale(d['date']) + margin.left
+        })
+        .y(d => {
+            // console.log('ys', d.cases);
+            return yScale(d['totals']) + margin.bottom
+        })
+
+    let lineColor = d3.scaleOrdinal(d3.schemeCategory10);
+    // lineColor.domain(lineArray.map(c => c.county))
+    lineColor.domain([0, 10])
+
+
+
+    let cLine = lineSvg.selectAll('.county-line')
+        .data(dateArray)
+        .enter().append('g')
+        .attr('class', 'county-line')
+    ;
+
+
+    cLine.append('text')
+        .attr('x', width / 2 - margin.left - margin.right)
+        .attr('y', margin.bottom - 10)
+        .attr('class', 'line-title')
+;
+    let titleExtraText = '';
+    if (currentCounty !== 'All') {
+        titleExtraText = ` for ${currentCounty}`
+    }
+
+    let date_type = d3.select('#date-type-select').node().value;
+    if (date_type === 'total') {
+        d3.selectAll('.line-title').text('Cumulative Totals' + titleExtraText);
+    } else {
+        d3.selectAll('.line-title').text('Daily Totals' + titleExtraText);
+    }
+    // .attr('fill', d => colorFunction(d));
+
+    lineSvg.call(lineTip);
+
+    let path = cLine.append('path')
+        .attr('class', 'line')
+        .style('fill', 'none')
+        .style('stroke-width', '2px')
+        .style('stroke', d => lineColor(d.count))
+        .attr('d', d => countyLine(d.values))
+    ;
+
+    let totalLength = path.node().getTotalLength();
+    // console.log(totalLength);
+
+    path.attr('stroke-dashoffset', totalLength)
+        .attr('stroke-dasharray', `${totalLength} ${totalLength}`)
+        .transition()
+        .duration(1600)
+        .attr('stroke-dashoffset', 0)
+
+    cLine.selectAll('circle')
+        .data(d => d.values)
+        .enter().append('circle')
+        .attr('class', 'line-circle')
+        .attr('cx', d => xScale(d.date) + margin.left)
+        .attr('cy', d => yScale(d.totals) + margin.bottom)
+        .attr('r', 0)
+        // .attr('fill', 'red')
+        .style('fill', (d) => {
+            // console.log(d);
+            return lineColor(d.count)
+        })
+        .on('mouseover', d => {
+            lineTip.show(d);
+        })
+        .on('mouseout', d => lineTip.hide(d))
+        .transition()
+        .duration(3700)
+        .attr('r', 4)
+    // ;
+
+
+// gridlines in x axis function
+    function xGrid() {
+        return d3.axisBottom(xScale)
+            .ticks(15)
+    }
+
+// gridlines in y axis function
+    function yGrid() {
+        return d3.axisLeft(yScale)
+            .ticks(10)
+    }// .style('fill', 'red')
+
+    // https://bl.ocks.org/d3noob/c506ac45617cf9ed39337f99f8511218
+    // X grid lines
+    lineSvg.append("g")
+        .attr("class", "grid")
+        .attr("transform", `translate(${-width / 2 + 31}, ${-20})`)
+        .call(xGrid()
+            .tickSize(-height + 63)
+            .tickFormat("")
+        )
+
+    // Y grid lines
+    lineSvg.append("g")
+        .attr("class", 'grid')
+        .attr('transform', `translate(${margin.left}, ${margin.bottom})`)
+        .call(yGrid()
+            .tickSize(-width)
+            .tickFormat("")
+        )
+    createLineLegend();
+}
+
+function createLineLegend() {
+    d3.selectAll('.line-legend').remove();
+
+    let legendVals = ['cases', 'deaths']
+
+    setLineLegend(legendVals);
+
+}
+
+let lineLegend;
+let lineLegendCircles;
+function setLineLegend(legendVals) {
+    lineLegend = lineSvg.selectAll('.line-legend')
+        .data(legendVals)
+        .enter().append('g')
+        .attr('class', 'line-legend')
+        .attr('transform', (d, i) => `translate(${width + 90}, ${i * 20 + 100})`)
+    ;
+
+    lineLegend.exit().remove();
+
+    lineLegend.append('text').text(d => d.substring(0, 1).toUpperCase() + d.substring(1, d.length))
+        .attr('transform', 'translate(15, 5)')
+        .attr('class', 'line-legend-text')
+        // .style('font-size', '0px')
+        // .transition()
+        //     .duration(3700)
+        //     .style('font-size', '14px')
+    ;
+
+    let lineColor = d3.scaleOrdinal(d3.schemeCategory10);
+    lineColor.domain([0, 10])
+
+    lineLegendCircles = lineLegend.append('circle')
+        .style('stroke', 'black')
+            .attr('cx', 5)
+            .attr('cy', 0)
+            .attr('r', 5)
+        // .transition()
+        //     .duration(3700)
+        //     .attr('r', 5)
+    ;
+
+    lineLegendCircles.attr('fill', d => lineColor(d))
+}
+
+createLine();
+
+let selector = document.getElementById('county-select');
+
+for (let i = 0; i < countyList.length; i++) {
+    selector.options[i] = new Option(countyList[i], countyList[i])
+}
+
+function getLineData(county) {
+
+    let date_type = d3.select('#date-type-select').node().value;
+    if (((county === currentCounty) ||
+        (currentCounty === document.getElementById('county-select').value && county === undefined)) &&
+        (date_type === 'total' !== onDays)) {
+        return;
+    }
+
+    clearLineData();
+
+    // console.log('setting up ajax...');
+    d3.select('body').style('cursor', 'wait');
+    d3.select('html').style('cursor', 'wait');
+    d3.select('input').style('cursor', 'wait');
+    d3.select("input").attr("disabled", "disabled");
+    if (county === undefined) {
+        currentCounty = document.getElementById('county-select').value;
+        let c = {properties: {NAME: currentCounty}}
+        d3.select('#' + cleanName(currentCounty)).attr('fill', colorFunction(c));
+        // document.getElementById('county-select').value = 'All';
+    } else {
+        // d3.select('#' + currentCounty).attr('stroke', 'black');
+        let c = {properties: {NAME: currentCounty}}
+        d3.select('#' + cleanName(currentCounty)).attr('fill', colorFunction(c));
+        // d3.select('#' + currentCounty).attr('stroke-width', '1px');
+       currentCounty = county;
+       document.getElementById('county-select').value = currentCounty;
+        // d3.select('#' + currentCounty).attr('stroke', 'green');
+        // d3.select('#' + currentCounty).attr('stroke-width', '5px');
+    }
+    d3.select('#' + cleanName(currentCounty)).attr('fill', '#5c5b5b');
+    d3.json(growthUrl, {
+        method: "POST",
+        body: JSON.stringify({'county': currentCounty, 'date_type': date_type}),
+        headers: {
+            "X-CSRFToken": csrfToken,
+            "Content-type": "application/json; charset=UTF-8"
+        }
+    })
+        .then(json => {
+            // console.log('back from ajax');
+
+            d3.selectAll('body').style('cursor', '');
+            d3.selectAll('html').style('cursor', '');
+            d3.selectAll('input').style('cursor', '');
+            d3.selectAll("input").attr("disabled", null);
+            // console.log('cases', json['cases']);
+            lineDates = JSON.parse(json['totals']);
+            createLine();
+
+        });
+}
+
+function clearLineData() {
+    d3.selectAll('.grid').remove();
+    d3.selectAll('.county-line').remove();
+    d3.selectAll('.axis').remove();
+    d3.selectAll('.line-legend').remove();
+    d3.selectAll('.line-circle').remove();
+    let c = {properties: {NAME: currentCounty}}
+    d3.select('#' + cleanName(currentCounty)).attr('fill', colorFunction(c));
+}
+
+function resetLineChart() {
+    clearLineData();
+    getLineData('All')
+}
