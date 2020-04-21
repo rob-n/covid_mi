@@ -55,6 +55,14 @@
         </div>
         <div id="line-div">
 
+            <div>
+                <label for="county-select"></label>
+                <select name="county-select" id="county-select">
+                    <option value="All">All</option>
+                </select>
+                <button onclick="addSelectionToLine()">Add</button>
+                <button onclick="clearAll()">Clear All</button>
+            </div>
         </div>
     </div>
 </main>
@@ -72,7 +80,8 @@
     let min_date = '{{ data.first_date | safe }}';
     let jsonUrl = "{% url 'case-detail' %}";
     let lineDates = {{ data.date_totals | safe }};
-    let c_lineDates = {{ data.c_date_totals | safe }}
+    let c_lineDates = {{ data.c_date_totals | safe }};
+    let countyList ={{ data.counties | safe }};
 </script>
 <script src="{% static 'mi/mi_map.js' %}"></script>
 </html>

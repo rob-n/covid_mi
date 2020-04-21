@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import CaseSerializer
-from .models import Case, Death, DateTotal
+from .models import Case, Death, DateTotal, County
 
 
 class IndexView(generic.ListView):
@@ -51,6 +51,9 @@ class IndexView(generic.ListView):
                           'deaths': x['c_deaths'],
                           'date': x['date'].strftime('%Y-%m-%d')} for x in cum_sum}
 
+        all_counties = County.objects.values('county').order_by('county')
+        counties = [x['county'] for x in all_counties]
+
         context = {
             'cases': case_count,
             'deaths': death_count,
@@ -59,7 +62,8 @@ class IndexView(generic.ListView):
             'last_date': last_date,
             'first_date': min_date,
             'date_totals': json.dumps(date_totals),
-            'c_date_totals': json.dumps(c_date_totals)
+            'c_date_totals': json.dumps(c_date_totals),
+            'counties': counties
         }
         return context
 

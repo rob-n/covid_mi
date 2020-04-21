@@ -24,14 +24,16 @@ let svg = d3.select('#map-div').append('svg')
     .attr('height', height)
     .attr('width', width + margin.left + margin.right)
     .append('g')
-    .attr('transform', `translate(${margin.left}, ${margin.top * 4})`);
+    .attr('transform', `translate(${margin.left}, ${margin.top * 4})`)
+;
 
 
 let lineSvg = d3.select('#line-div').append('svg')
     .attr('height', height)
     .attr('width', width + margin.left + margin.right)
     .append('g')
-    .attr('transform', `translate(${margin.left}, ${margin.top * 4})`);
+    // .attr('transform', `translate(${margin.left}, ${margin.top * 4})`)
+;
 
 // let sliderCreated = false;
 // let sliderParams;
@@ -458,6 +460,23 @@ document.addEventListener('keyup', (event) => {
     }
 });
 
+let lineTip = d3.tip()
+    .attr('class', 'd3-tip')
+    .html(function (d) {
+        let total = d.totals;
+        if (d.totals === undefined) {
+            total = 0;
+        }
+        // let deaths = deathData[d.properties['NAME']];
+        // if (deaths === undefined) {
+        //     deaths = 0;
+        // }
+        let info = 'Date: ' + d.date.toISOString().substring(0, 10) + '<br>';
+        info += d.count.substring(0, 1).toUpperCase() + d.count.substring(1) + ': ' + total.toLocaleString() + '<br>';
+        return info
+    })
+;
+
 function createLine() {
 
     let parser = d3.timeParse('%Y-%m-%d')
@@ -468,29 +487,29 @@ function createLine() {
 
     let xAxis = lineSvg.append('g')
         // .attr('transform', `translate(${-width / 2 + 31}, ${-20})`)
-        .attr('transform', `translate(${0}, ${margin.top + margin.bottom})`)
+        .attr('transform', `translate(${margin.left}, ${height - margin.bottom - 10})`)
         .call(d3.axisBottom(xScale).ticks(10));
 
     let min = 10;
-    let max = 15000;
+    let max = 35000;
 
     let yScale = d3.scaleLinear()
         .domain([min - 10, max + 10])
-        .range([height, 0])
+        .range([height - margin.top, 0])
 
     let yAxis = lineSvg.append('g')
-        .attr('transform', `translate(${0}, ${-height + margin.top + margin.bottom})`)
+        .attr('transform', `translate(${margin.left}, ${margin.bottom})`)
         .call(d3.axisLeft(yScale))
 
     let countyLine = d3.line()
         .x(d => {
             // console.log(d);
             // console.log('xs', xScale(d['date']));
-            return xScale(d['date'])
+            return xScale(d['date']) + margin.left
         })
         .y(d => {
             // console.log('ys', d.cases);
-            return yScale(d['totals']) - height - margin.top - margin.bottom
+            return yScale(d['totals']) + margin.bottom
         })
 
     let lineColor = d3.scaleOrdinal(d3.schemeCategory10);
@@ -505,9 +524,11 @@ function createLine() {
 
     for (const date in lineDates) {
         dateArray[0]['values'].push({'date': parser(lineDates[date]['date']),
-                                     'totals': lineDates[date]['cases']})
+                                     'totals': lineDates[date]['cases'],
+                                     'count': 'cases'})
         dateArray[1]['values'].push({'date': parser(lineDates[date]['date']),
-                                     'totals': lineDates[date]['deaths']})
+                                     'totals': lineDates[date]['deaths'],
+                                     'count': 'deaths'})
     }
 
     console.log('dateArray', dateArray);
@@ -518,30 +539,90 @@ function createLine() {
         .attr('class', 'county-line')
     ;
 
+    cLine.append('text')
+        .attr('x', width / 2 - margin.left - margin.right)
+        .attr('y', margin.bottom - 10)
+        .attr('class', 'line-title')
+        .text('Cumulative totals');
+
     // .attr('fill', d => colorFunction(d));
 
-    cLine.append('path')
+    lineSvg.call(lineTip);
+
+    let path = cLine.append('path')
         .attr('class', 'line')
         .style('fill', 'none')
         .style('stroke-width', '2px')
-        // .style('stroke', 'black')
         .style('stroke', d => lineColor(d.count))
-        .attr('d', d => countyLine(d.values));
+        .attr('d', d => countyLine(d.values))
+    ;
+
+    let totalLength = path.node().getTotalLength();
+    console.log(totalLength);
+
+    path.attr('stroke-dashoffset', totalLength)
+        .attr('stroke-dasharray', `${totalLength} ${totalLength}`)
+        .transition()
+        .duration(1600)
+        .attr('stroke-dashoffset', 0)
 
     cLine.selectAll('circle')
         .data(d => d.values)
         .enter().append('circle')
         .attr('class', 'line-circle')
-        .attr('cx', d => xScale(d.date))
-        .attr('cy', d => yScale(d.totals) - height)
-        .attr('r', 4)
+        .attr('cx', d => xScale(d.date) + margin.left)
+        .attr('cy', d => yScale(d.totals) + margin.bottom)
+        .attr('r', 0)
         // .attr('fill', 'red')
         .style('fill', (d) => {
             // console.log(d);
             return lineColor(d.count)
         })
-        // .on('mouseover', d => lineTip.show(d))
-        // .on('mouseout', d => lineTip.hide(d))
+        .on('mouseover', d => {
+            lineTip.show(d);
+        })
+        .on('mouseout', d => lineTip.hide(d))
+        .transition()
+        .duration(3700)
+        .attr('r', 4)
     // ;
+
+
+// gridlines in x axis function
+    function xGrid() {
+        return d3.axisBottom(xScale)
+            .ticks(15)
+    }
+
+// gridlines in y axis function
+    function yGrid() {
+        return d3.axisLeft(yScale)
+            .ticks(10)
+    }// .style('fill', 'red')
+
+    // https://bl.ocks.org/d3noob/c506ac45617cf9ed39337f99f8511218
+    // X grid lines
+    lineSvg.append("g")
+        .attr("class", "grid")
+        .attr("transform", `translate(${-width / 2 + 31}, ${-20})`)
+        .call(xGrid()
+            .tickSize(-height + 63)
+            .tickFormat("")
+        )
+
+    // Y grid lines
+    lineSvg.append("g")
+        .attr("class", 'grid')
+        .attr('transform', `translate(${margin.left}, ${margin.bottom})`)
+        .call(yGrid()
+            .tickSize(-width)
+            .tickFormat("")
+        )
 }
 createLine();
+
+let selector = document.getElementById('county-select');
+
+for (let i = 1; i < countyList.length; i++) {
+    selector.options[i] = new Option(countyList[i], countyList[i])
+}
