@@ -1,7 +1,7 @@
 import datetime
 import json
 
-from django.db.models import Count, Max, Min, Sum, Q, Window, F
+from django.db.models import Count, Max, Min, Sum, Q, Func
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views import generic
@@ -42,8 +42,12 @@ class IndexView(generic.ListView):
                        for x in date_totals_qs}
 
         cum_sum = DateTotal.objects. \
-            annotate(c_cases=Window(Sum('cases'), order_by=F('date').asc())) \
-            .annotate(c_deaths=Window(Sum('deaths'), order_by=F('date').asc())) \
+            annotate(c_cases=Func(Sum('cases'),
+                                  template='%(expressions)s OVER (ORDER BY %(order_by)s)',
+                                  order_by="date")) \
+            .annotate(c_deaths=Func(Sum('deaths'),
+                                    template='%(expressions)s OVER (ORDER BY %(order_by)s)',
+                                    order_by="date")) \
             .values('date', 'c_cases', 'c_deaths').order_by('date')
 
         c_date_totals = {x['date'].strftime('%Y-%m-%d'):
@@ -125,8 +129,13 @@ class CountyGrowth(APIView):
                            'date': x['date'].strftime('%Y-%m-%d')}
                       for x in date_totals_qs}
         else:
-            cum_sum = total_qs.annotate(c_cases=Window(Sum('cases'), order_by=F('date').asc())) \
-                .annotate(c_deaths=Window(Sum('deaths'), order_by=F('date').asc())) \
+            cum_sum = DateTotal.objects. \
+                annotate(c_cases=Func(Sum('cases'),
+                                      template='%(expressions)s OVER (ORDER BY %(order_by)s)',
+                                      order_by="date")) \
+                .annotate(c_deaths=Func(Sum('deaths'),
+                                        template='%(expressions)s OVER (ORDER BY %(order_by)s)',
+                                        order_by="date")) \
                 .values('date', 'c_cases', 'c_deaths').order_by('date')
 
             totals = {x['date'].strftime('%Y-%m-%d'):
