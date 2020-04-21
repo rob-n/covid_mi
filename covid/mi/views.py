@@ -32,24 +32,26 @@ class IndexView(generic.ListView):
         min_date = DateTotal.objects.aggregate(min_date=Min('date'))['min_date']
         dates_list = [x[0].strftime('%Y-%m-%d') for x in dates]
 
-        date_totals_qs = DateTotal.objects.values('date').annotate(cases=Sum('cases'),
-                                                                   deaths=Sum('deaths'))
+        date_totals_qs = DateTotal.objects.values('date') \
+            .annotate(cases=Sum('cases'), deaths=Sum('deaths')).order_by('date')
 
-        date_totals = {x['date'].strftime('%Y-%m-%d'):
-                           {'cases': x['cases'],
-                            'deaths': x['deaths'],
-                            'date': x['date'].strftime('%Y-%m-%d')}
-                       for x in date_totals_qs}
+        date_totals = cumulative_qs(date_totals_qs)
 
-        cum_sum = DateTotal.objects. \
-            annotate(c_cases=Window(Sum('cases'), order_by=F('date').asc())) \
-            .annotate(c_deaths=Window(Sum('deaths'), order_by=F('date').asc())) \
-            .values('date', 'c_cases', 'c_deaths').order_by('date')
+        # date_totals = {x['date'].strftime('%Y-%m-%d'):
+        #                    {'cases': x['cases'],
+        #                     'deaths': x['deaths'],
+        #                     'date': x['date'].strftime('%Y-%m-%d')}
+        #                for x in date_totals_qs}
 
-        c_date_totals = {x['date'].strftime('%Y-%m-%d'):
-                             {'cases': x['c_cases'],
-                              'deaths': x['c_deaths'],
-                              'date': x['date'].strftime('%Y-%m-%d')} for x in cum_sum}
+        # cum_sum = DateTotal.objects. \
+        #     annotate(c_cases=Window(Sum('cases'), order_by=F('date').asc())) \
+        #     .annotate(c_deaths=Window(Sum('deaths'), order_by=F('date').asc())) \
+        #     .values('date', 'c_cases', 'c_deaths').order_by('date')
+        #
+        # c_date_totals = {x['date'].strftime('%Y-%m-%d'):
+        #                      {'cases': x['c_cases'],
+        #                       'deaths': x['c_deaths'],
+        #                       'date': x['date'].strftime('%Y-%m-%d')} for x in cum_sum}
 
         all_counties = County.objects.values('county').order_by('county')
         counties = [x['county'] for x in all_counties]
@@ -61,7 +63,7 @@ class IndexView(generic.ListView):
             'dates': dates_list,
             'last_date': last_date,
             'first_date': min_date,
-            'date_totals': json.dumps(c_date_totals),
+            'date_totals': json.dumps(date_totals),
             'counties': counties
         }
         return context
@@ -110,30 +112,61 @@ class CountyGrowth(APIView):
 
     def post(self, request, format=None):
         if request.data['county'] == 'All':
-            total_qs = DateTotal.objects.all()
+            total_qs = DateTotal.objects.all().values('date'). \
+                annotate(cases=Sum('cases'), deaths=Sum('deaths')).order_by('date')
         else:
-            total_qs = DateTotal.objects.filter(county__county=request.data['county'])
+            total_qs = DateTotal.objects.filter(county__county=request.data['county'])\
+                .values('date').annotate(cases=Sum('cases'),
+                                         deaths=Sum('deaths')).order_by('date')
+            # total_qs = DateTotal.objects.filter(county__county=request.data['county']) \
+            #     .annotate(cases=Sum('cases'), deaths=Sum('deaths'))
 
         if request.data['date_type'] == 'date':
-            date_totals_qs = total_qs.values('date').annotate(cases=Sum('cases'),
-                                                              deaths=Sum('deaths'))
+            # date_totals_qs = total_qs.values('date').annotate(cases=Sum('cases'),
+            #                                                   deaths=Sum('deaths'))
 
             totals = {x['date'].strftime('%Y-%m-%d'):
                           {'cases': x['cases'],
                            'deaths': x['deaths'],
                            'date': x['date'].strftime('%Y-%m-%d')}
-                      for x in date_totals_qs}
+                      for x in total_qs}
         else:
-            cum_sum = total_qs.annotate(c_cases=Window(Sum('cases'), order_by=F('date').asc())) \
-                .annotate(c_deaths=Window(Sum('deaths'), order_by=F('date').asc())) \
-                .values('date', 'c_cases', 'c_deaths').order_by('date')
-
-            totals = {x['date'].strftime('%Y-%m-%d'):
-                          {'cases': x['c_cases'],
-                           'deaths': x['c_deaths'],
-                           'date': x['date'].strftime('%Y-%m-%d')} for x in cum_sum}
+            totals = cumulative_qs(total_qs)
+            # cum_sum = total_qs.annotate(c_cases=Window(Sum('cases'), order_by=F('date').asc())) \
+            #     .annotate(c_deaths=Window(Sum('deaths'), order_by=F('date').asc())) \
+            #     .values('date', 'c_cases', 'c_deaths').order_by('date')
+            #
+            # totals = {x['date'].strftime('%Y-%m-%d'):
+            #               {'cases': x['c_cases'],
+            #                'deaths': x['c_deaths'],
+            #                'date': x['date'].strftime('%Y-%m-%d')} for x in cum_sum}
 
         context = {
             'totals': json.dumps(totals)
         }
         return JsonResponse(context)
+
+
+def cumulative_qs(queryset):
+    dates_array = []
+    cases_array = []
+    deaths_array = []
+
+    for x in queryset:
+        dates_array.append(x['date'].strftime('%Y-%m-%d'))
+        cases_array.append(x['cases'])
+        deaths_array.append(x['deaths'])
+
+    date_totals = {}
+    for ix, (x, y, z) in enumerate(zip(dates_array, cases_array, deaths_array)):
+        if ix == 0:
+            prev_case = 0
+            prev_death = 0
+        else:
+            prev_case = date_totals[dates_array[ix - 1]]['cases']
+            prev_death = date_totals[dates_array[ix - 1]]['deaths']
+        date_totals[x] = {'cases': y + prev_case,
+                          'deaths': z + prev_death,
+                          'date': x}
+
+    return date_totals
