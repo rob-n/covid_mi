@@ -205,7 +205,7 @@ function setLegend(legendVals) {
         .data(legendVals)
         .enter().append('g')
         .attr('class', 'legend')
-        .attr('transform', (d, i) => `translate(${width - 650}, ${i * 20})`)
+        .attr('transform', (d, i) => `translate(${width - 200}, ${i * 20})`)
     ;
 
     legend.exit().remove();
@@ -491,7 +491,7 @@ function createLine() {
 
     let xAxis = lineSvg.append('g')
         // .attr('transform', `translate(${-width / 2 + 31}, ${-20})`)
-        .attr('transform', `translate(${margin.left}, ${height - margin.bottom - 10})`)
+        .attr('transform', `translate(${margin.left + margin.right}, ${height - margin.bottom - 10})`)
         .attr('class', 'axis')
         .call(d3.axisBottom(xScale).tickFormat(d3.timeFormat('%m/%d')));
 
@@ -500,7 +500,7 @@ function createLine() {
         .range([height - margin.top, 0])
 
     let yAxis = lineSvg.append('g')
-        .attr('transform', `translate(${margin.left}, ${margin.bottom})`)
+        .attr('transform', `translate(${margin.left + margin.right}, ${margin.bottom})`)
         .attr('class', 'axis')
         .call(d3.axisLeft(yScale))
 
@@ -508,7 +508,7 @@ function createLine() {
         .x(d => {
             // console.log(d);
             // console.log('xs', xScale(d['date']));
-            return xScale(d['date']) + margin.left
+            return xScale(d['date']) + margin.left + margin.right
         })
         .y(d => {
             // console.log('ys', d.cases);
@@ -569,7 +569,7 @@ function createLine() {
         .data(d => d.values)
         .enter().append('circle')
         .attr('class', 'line-circle')
-        .attr('cx', d => xScale(d.date) + margin.left)
+        .attr('cx', d => xScale(d.date) + margin.left + margin.right)
         .attr('cy', d => yScale(d.totals) + margin.bottom)
         .attr('r', 0)
         // .attr('fill', 'red')
@@ -612,9 +612,9 @@ function createLine() {
     // Y grid lines
     lineSvg.append("g")
         .attr("class", 'grid')
-        .attr('transform', `translate(${margin.left}, ${margin.bottom})`)
+        .attr('transform', `translate(${margin.left + margin.right}, ${margin.bottom})`)
         .call(yGrid()
-            .tickSize(-width - 150)
+            .tickSize(-width - 120 - margin.right)
             .tickFormat("")
         )
     createLineLegend();
@@ -636,7 +636,7 @@ function setLineLegend(legendVals) {
         .data(legendVals)
         .enter().append('g')
         .attr('class', 'line-legend')
-        .attr('transform', (d, i) => `translate(${width + 90 + 150}, ${i * 20 + 100})`)
+        .attr('transform', (d, i) => `translate(${width + 90 + 150 + margin.right}, ${i * 20 + 100})`)
     ;
 
     lineLegend.exit().remove();
