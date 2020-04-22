@@ -8,27 +8,39 @@
     <link rel="stylesheet" href="{% static 'mi/mi_map.css' %}">
 </head>
 <body>
-<aside>
-    <h2 class="main-title">MI COVID-19 Tracker</h2>
-    <h3 id="case-total"></h3>
-    <h3 id="death-total"></h3>
-
-    <div id="slider-type-dates">
-        <label for="date-type-select">Total Type:</label>
-        <select name="date-type" id="date-type-select" onchange="getData(); getLineData()">
-            <option value="total" selected>Cumulative</option>
-            <option value="date">Individual</option>
-        </select>
+<div>
+    <div class="header">
+        <h2 class="main-title">Michigan COVID-19 Tracker</h2>
+        <div class="totals">
+            <div></div>
+            <h3 id="case-total"></h3>
+            <h3 id="death-total"></h3>
+            <div></div>
+        </div>
+        <div class="options-div">
+            <div></div>
+            <div class="county-add-div">
+                <label for="county-select"></label>
+                <select name="county-select" id="county-select">
+                    <option value="All">All</option>
+                </select>
+                <button onclick="getLineData()">Add County</button>
+                <button onclick="resetLineChart()">Reset</button>
+                {#                <label for="cases-chk">Cases</label><input type="checkbox" id="cases-chk" checked>#}
+                {#                <label for="death-chk">Deaths</label><input type="checkbox" id="death-chk" checked>#}
+            </div>
+            <div id="slider-type-dates">
+                <label for="date-type-select">Total Type:</label>
+                <select name="date-type" id="date-type-select" onchange="getData(); getLineData()">
+                    <option value="total" selected>Cumulative</option>
+                    <option value="date">Individual</option>
+                </select>
+            </div>
+            <button id="progress-btn" onclick="showProgression()">Show Progression</button>
+        </div>
+        <div></div>
     </div>
-    <button id="progress-btn" onclick="showProgression()">Show Progression</button>
     {#TODO: Date Picker Widget#}
-    <p>
-        <a href="https://www.linkedin.com/in/rob-nemeth" target="_blank"><img src="{% static 'mi/li_logo.png' %}" alt="LinkedIn"></a>
-        <a href="https://www.twitter.com/niftyRob" target="_blank"><img src="{% static 'mi/twitter_logo.svg' %}" alt="Twitter"></a>
-    </p>
-    <a href="https://www.michigan.gov/coronavirus/" target="_blank">Data from MIDHHS</a>
-    <p>Numbers taken at time of daily update, changes may occur over time</p>
-    <p></p>
     {#        <div id="slider-type-ticks">#}
     {#            <label for="slider-tick-select">Show Ticks as:</label>#}
     {#            <select name="slider-tick" id="slider-tick-select" onchange="setSlider()">#}
@@ -38,7 +50,7 @@
     {#            <br>#}
     {#            <br>#}
     {#        </div>#}
-</aside>
+</div>
 <main>
     <div class="main-div">
         <div id="map-div"></div>
@@ -53,20 +65,23 @@
                 <button id="last-btn" disabled onclick="lastDate()">>></button>
             </div>
         </div>
-        <div id="line-div">
-            <div class="county-add-div">
-                <label for="county-select"></label>
-                <select name="county-select" id="county-select">
-                    <option value="All">All</option>
-                </select>
-                <button onclick="getLineData()">Add County</button>
-                <button onclick="resetLineChart()">Reset</button>
-{#                <label for="cases-chk">Cases</label><input type="checkbox" id="cases-chk" checked>#}
-{#                <label for="death-chk">Deaths</label><input type="checkbox" id="death-chk" checked>#}
-            </div>
-        </div>
+    </div>
+{#    <div></div>#}
+    <div id="line-div">
     </div>
 </main>
+<div class="bottom">
+    <div class="credits">
+        <p>
+            <a href="https://www.linkedin.com/in/rob-nemeth" target="_blank"><img src="{% static 'mi/li_logo.png' %}"
+                                                                                  alt="LinkedIn"></a>
+            <a href="https://www.twitter.com/niftyRob" target="_blank"><img src="{% static 'mi/twitter_logo.svg' %}"
+                                                                            alt="Twitter"></a>
+        </p>
+        <a href="https://www.michigan.gov/coronavirus/" target="_blank">Data from MIDHHS</a>
+        <p>Numbers taken at time of daily update, changes may occur over time</p>
+    </div>
+</div>
 </body>
 <script src="{% static 'mi/d3-simple-slider.min.js' %}"></script>
 <script src="{% static 'mi/topojson.min.js' %}"></script>

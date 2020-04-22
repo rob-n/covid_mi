@@ -3,18 +3,20 @@
 .main-title {
     font-size: 26px;
     color: #0f0f0f;
+    margin-top: 10px;
+    margin-bottom: 0;
 }
 
 .main-div {
-    margin: auto;
+    margin-left: auto;
+    margin-right: auto;
+    padding-bottom: 10px;
     width: 50%;
 }
 
 .county {
     stroke: black;
-    /*stroke-linejoin: round;*/
     fill: none;
-    /*fill: steelblue;*/
 }
 
 .county-bounds:hover {
@@ -25,7 +27,7 @@
 
 .county-add-div {
     horiz-align: center;
-    margin: 0 25px 25px 125px;
+    /*margin: 0 25px 25px 125px;*/
 }
 
 #line-div {
@@ -53,8 +55,13 @@ html {
     stroke-width: 0;
 }
 
+div .totals {
+    margin-top: 0;
+    padding: 5px;
+}
+
 body {
-    margin-top: 15px;
+    margin-top: 0;
     background: rgb(222, 162, 39);
     /*background: linear-gradient(146deg, rgba(222, 162, 39, 1) 0%, rgba(175, 40, 40, 1) 100%);*/
     background: linear-gradient(to right bottom, rgba(222, 162, 39, 1), rgba(175, 40, 40, 1));
@@ -64,21 +71,32 @@ body {
     /*background-size: contain;*/
     /*background-repeat: no-repeat;*/
     display: grid;
-    grid-template-columns: 25% 70% 10% auto;
-    padding: 2em;
+    grid-template-rows: 15% 70% 10% auto;
+    padding: 1em;
 }
 
-aside {
+.header {
     background: #f1f1f1;
-    border-radius: 10px 0 0 10px;
-    display: grid;
+    border-radius: 10px 10px 0 0;
+    /*display: grid;*/
     /*grid-template-rows: [title] 15% [cases] 5% [deaths] 10% [date] 10% [gap] 50% [foot] 7% ;*/
     /*grid-template-rows: auto;*/
-    grid-template-rows: 8% 3% 8% 5% 10% 5% 7% auto;
-    padding: 1em;
+    /*grid-template-rows: auto;*/
+    /*padding-bottom: 5px;*/
     border: darkgray 1px solid;
     text-align: center;
     /*min-width: 500px;*/
+}
+
+.totals {
+    display: grid;
+    grid-template-columns: 25% 25% 25% 25%;
+}
+
+.options-div {
+    display: grid;
+    grid-template-columns: 20% 24% 20% 20% 15%;
+    margin-bottom: 10px;
 }
 
 @media only screen and (max-width: 925px) {
@@ -166,7 +184,7 @@ img {
 /*}*/
 
 aside div {
-    padding: .5em;
+    /*padding: .5em;*/
 }
 
 .tick text {
@@ -180,9 +198,25 @@ aside div {
 
 main {
     background: #f8f8f8;
-    border-radius: 0 10px 10px 0;
+    /*border-radius: 0 0 10px 10px;*/
     padding: 1em;
+    display: grid;
+    grid-template-columns: 40% 60%;
     border: darkgray 1px solid;
+}
+
+.bottom {
+    background: #f8f8f8;
+    border-radius: 0 0 10px 10px;
+    padding: 1em;
+    display: grid;
+    grid-template-rows: auto;
+    border: darkgray 1px solid;
+}
+
+.bottom div {
+    text-align: center;
+    margin: auto;
 }
 
 option {
@@ -190,7 +224,8 @@ option {
 }
 
 .main-div {
-    float: left;
+    /*float: left;*/
+    min-width: 40vw;
 }
 
 .label-year {
