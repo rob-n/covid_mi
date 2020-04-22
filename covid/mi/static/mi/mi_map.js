@@ -636,7 +636,7 @@ function setLineLegend(legendVals) {
         .data(legendVals)
         .enter().append('g')
         .attr('class', 'line-legend')
-        .attr('transform', (d, i) => `translate(${width + 90 + 150 + margin.right}, ${i * 20 + 100})`)
+        .attr('transform', (d, i) => `translate(${width + 90 + 130 + margin.right}, ${i * 20 + 200})`)
     ;
 
     lineLegend.exit().remove();

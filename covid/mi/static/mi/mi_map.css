@@ -73,10 +73,11 @@ body {
     background: -moz-linear-gradient(to right bottom, rgba(222, 162, 39, 1), rgba(175, 40, 40, 1));
     /*background-repeat: no-repeat;*/
     /*background-size: contain;*/
-    /*background-repeat: no-repeat;*/
     display: grid;
     grid-template-rows: 15% 70% 10% auto;
-    padding: 1em;
+    padding-left: 1em;
+    padding-top: 1em;
+    padding-right: 1em;
 }
 
 .header {
@@ -215,15 +216,16 @@ main {
 .bottom {
     background: #f8f8f8;
     border-radius: 0 0 10px 10px;
-    padding: 1em;
-    display: grid;
-    grid-template-rows: auto;
+    padding: 1em 1em 1em 0;
+    /*display: grid;*/
+    /*grid-template-rows: auto;*/
     border: darkgray 1px solid;
 }
 
 .bottom div {
     text-align: center;
-    margin: auto;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 option {

@@ -18,7 +18,7 @@ let csrfToken = getCookie('csrftoken');
 
 let margin = ({top: 70, right: 30, bottom: 30, left: 50});
 let height = 625 - margin.top - margin.bottom;
-let width = 805 - margin.left - margin.right;
+let width = 500 - margin.left - margin.right;
 
 let svg = d3.select('#map-div').append('svg')
     .attr('height', height)
@@ -26,13 +26,13 @@ let svg = d3.select('#map-div').append('svg')
     // .attr('viewbox', `0 0 ${height} ${width + margin.left + margin.right}`)
     //     .attr('preserveAspectRatio', 'xMidYMin meet')
     .append('g')
-    .attr('transform', `translate(${margin.left}, ${margin.top * 4})`)
+    .attr('transform', `translate(${-150}, ${margin.top * 4})`)
 ;
 
 
 let lineSvg = d3.select('#line-div').append('svg')
     .attr('height', height)
-    .attr('width', width + 100 + margin.left + margin.right)
+    .attr('width', width + 250 + margin.left + margin.right)
     .append('g')
     // .attr('transform', `translate(${margin.left}, ${margin.top * 4})`)
 ;
@@ -41,60 +41,13 @@ let lineSvg = d3.select('#line-div').append('svg')
 // let sliderParams;
 let deathData;
 
-// function setSlider() {
-//
-//     // console.log('dates', dates);
-//     sliderParams = d3.sliderBottom()
-//         .on('onchange', () => {
-//             getData();
-//             updateMap()
-//         });
-//
-//     // if (d3.select('#slider-tick-select').node().value === 'date') {
-//     //     console.log('date');
-//     let formatDate = d3.timeParse('%m/%d');
-//
-//     let sliderDates = dates.map(d => {
-//         return formatDate(d)
-//     });
-//     // console.log('sliderDates', sliderDates);
-//
-//     sliderParams.min(sliderDates[0])
-//         .max(sliderDates[dates.length - 1])
-//         .step(1000 * 60 * 60 * 24)
-//         .tickValues(sliderDates)
-//         .tickFormat(d3.timeFormat('%m/%d'))
-//         .default(sliderDates[sliderDates.length - 1])
-//         .width(600)
-//     ;
-//
-//     let slider = d3.select('#slider-div')
-//         .append('svg')
-//         .attr('id', 'svg-slider')
-//         .attr('width', width)
-//         .attr('height', 100)
-//         .append('g')
-//         .attr('id', 'slider')
-//         .attr('transform', 'translate(30, 30)')
-//     ;
-//
-//     if (!sliderCreated) {
-//         sliderCreated = true;
-//     } else {
-//         d3.select('#svg-slider').remove();
-//     }
-//
-//
-//     slider.call(sliderParams);
-// }
-
 let path = d3.geoPath();
 
 let caseInfo = {};
 
 let projection = d3.geoAlbersUsa()
-    .translate([-400, height])
-    .scale([5000])
+    .translate([-200, height])
+    .scale([4700])
 ;
 
 let states;
@@ -252,7 +205,7 @@ function setLegend(legendVals) {
         .data(legendVals)
         .enter().append('g')
         .attr('class', 'legend')
-        .attr('transform', (d, i) => `translate(${width - 140}, ${i * 20})`)
+        .attr('transform', (d, i) => `translate(${width - 200}, ${i * 20})`)
     ;
 
     legend.exit().remove();
@@ -307,8 +260,8 @@ function getData() {
             deathData = json['deaths'];
             totalCases = json['total_cases'];
             totalDeaths = json['total_deaths'];
-            d3.select('#case-total').text('Total Cases: ' + totalCases.toLocaleString());
-            d3.select('#death-total').text('Total Deaths: ' + totalDeaths.toLocaleString());
+            d3.select('#case-total').text('Cases: ' + totalCases.toLocaleString());
+            d3.select('#death-total').text('Deaths: ' + totalDeaths.toLocaleString());
             d3.select('#current-date').text(parsed);
             if (!isNaN(mapData['Detroit'])) {
                 mapData['Wayne'] += mapData['Detroit'];
@@ -534,20 +487,20 @@ function createLine() {
 
     let xScale = d3.scaleTime()
         .domain(d3.extent(newDates, d => parser(d)))
-        .range([0, width]);
+        .range([0, width + 150]);
 
     let xAxis = lineSvg.append('g')
         // .attr('transform', `translate(${-width / 2 + 31}, ${-20})`)
-        .attr('transform', `translate(${margin.left}, ${height - margin.bottom - 10})`)
+        .attr('transform', `translate(${margin.left + margin.right}, ${height - margin.bottom - 10})`)
         .attr('class', 'axis')
-        .call(d3.axisBottom(xScale).ticks(10));
+        .call(d3.axisBottom(xScale).tickFormat(d3.timeFormat('%m/%d')));
 
     let yScale = d3.scaleLinear()
         .domain([min, max + d3.max([Math.round(max / 10), 10])])
         .range([height - margin.top, 0])
 
     let yAxis = lineSvg.append('g')
-        .attr('transform', `translate(${margin.left}, ${margin.bottom})`)
+        .attr('transform', `translate(${margin.left + margin.right}, ${margin.bottom})`)
         .attr('class', 'axis')
         .call(d3.axisLeft(yScale))
 
@@ -555,7 +508,7 @@ function createLine() {
         .x(d => {
             // console.log(d);
             // console.log('xs', xScale(d['date']));
-            return xScale(d['date']) + margin.left
+            return xScale(d['date']) + margin.left + margin.right
         })
         .y(d => {
             // console.log('ys', d.cases);
@@ -580,7 +533,7 @@ function createLine() {
         .attr('y', margin.bottom - 10)
         .attr('class', 'line-title')
 ;
-    let titleExtraText = '';
+    let titleExtraText = ' for All Counties';
     if (currentCounty !== 'All') {
         titleExtraText = ` for ${currentCounty}`
     }
@@ -616,7 +569,7 @@ function createLine() {
         .data(d => d.values)
         .enter().append('circle')
         .attr('class', 'line-circle')
-        .attr('cx', d => xScale(d.date) + margin.left)
+        .attr('cx', d => xScale(d.date) + margin.left + margin.right)
         .attr('cy', d => yScale(d.totals) + margin.bottom)
         .attr('r', 0)
         // .attr('fill', 'red')
@@ -652,16 +605,16 @@ function createLine() {
         .attr("class", "grid")
         .attr("transform", `translate(${-width / 2 + 31}, ${-20})`)
         .call(xGrid()
-            .tickSize(-height + 63)
+            .tickSize(-height + 63 + 150)
             .tickFormat("")
         )
 
     // Y grid lines
     lineSvg.append("g")
         .attr("class", 'grid')
-        .attr('transform', `translate(${margin.left}, ${margin.bottom})`)
+        .attr('transform', `translate(${margin.left + margin.right}, ${margin.bottom})`)
         .call(yGrid()
-            .tickSize(-width)
+            .tickSize(-width - 120 - margin.right)
             .tickFormat("")
         )
     createLineLegend();
@@ -683,7 +636,7 @@ function setLineLegend(legendVals) {
         .data(legendVals)
         .enter().append('g')
         .attr('class', 'line-legend')
-        .attr('transform', (d, i) => `translate(${width + 90}, ${i * 20 + 100})`)
+        .attr('transform', (d, i) => `translate(${width + 90 + 130 + margin.right}, ${i * 20 + 200})`)
     ;
 
     lineLegend.exit().remove();
@@ -717,8 +670,8 @@ createLine();
 
 let selector = document.getElementById('county-select');
 
-for (let i = 0; i < countyList.length; i++) {
-    selector.options[i] = new Option(countyList[i], countyList[i])
+for (let i = 1; i < countyList.length + 1; i++) {
+    selector.options[i] = new Option(countyList[i - 1], countyList[i - 1]);
 }
 
 function getLineData(county) {
