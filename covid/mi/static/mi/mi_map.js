@@ -529,7 +529,7 @@ function createLine() {
 
 
     cLine.append('text')
-        .attr('x', width / 2 - margin.left - margin.right)
+        .attr('x', width / 2 - margin.right)
         .attr('y', margin.bottom - 10)
         .attr('class', 'line-title')
 ;
