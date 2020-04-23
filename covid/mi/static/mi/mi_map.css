@@ -83,10 +83,10 @@
 }
 
 #line-div {
-    margin-top: -70px;
+    /*margin-top: 170px;*/
     margin-left: auto;
     margin-right: auto;
-    min-height: 850px;
+    /*min-height: 850px;*/
     /*min-width: 40vw;*/
 }
 
@@ -126,8 +126,8 @@ body {
     /*background-repeat: no-repeat;*/
     /*background-size: contain;*/
     display: grid;
-    grid-template-rows: 25vh 150vh 25vh;
-    padding: 1em;
+    grid-template-rows: calc(10vh * 1vw) calc(55vh * 1vw) calc(10vh * 1vw);
+    padding: 5px;
     /*height: 100%;*/
 }
 
@@ -283,7 +283,7 @@ main {
     /*padding: 0.5em;*/
     border: darkgray 1px solid;
     display: grid;
-    grid-template-rows: 60% 40%;
+    grid-template-rows: calc(30vh * 1vw) calc(20vh * 1vw);
 }
 
 .bottom {
