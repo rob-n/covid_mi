@@ -33,7 +33,7 @@
                 <label for="date-type-select">Total Type:</label>
                 <select name="date-type" id="date-type-select" onchange="getData(); getLineData()">
                     <option value="total" selected>Cumulative</option>
-                    <option value="date">Individual</option>
+                    <option value="date">Daily</option>
                 </select>
             </div>
             <button id="progress-btn" onclick="showProgression()">Show Progression</button>
@@ -80,6 +80,7 @@
         </p>
         <a href="https://www.michigan.gov/coronavirus/" target="_blank">Data from MIDHHS</a>
         <p>Numbers taken at time of daily update, changes may occur over time</p>
+        <p>Last updated on {{ data.last_date }}</p>
     </div>
 </div>
 <div></div>
