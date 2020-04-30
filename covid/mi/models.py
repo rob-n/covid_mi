@@ -12,9 +12,51 @@ from django.db.models import Sum
 
 class County(models.Model):
     county = models.CharField(max_length=100, null=False)
+    population = models.IntegerField()
+    sq_mi = models.IntegerField()
 
     def __str__(self):
         return self.county
+
+    @staticmethod
+    def load_county_info():
+        """
+        Loads county information from csv file. Expects county name, population, and sq_ft area
+        :return: True if successful
+        """
+        path = r'mi/data/counties.csv'
+        with open(path) as f:
+            data = f.readlines()
+            for line in data[1:]:
+                # remove new line character at end and set to title case
+                county, population, sq_mi = line.replace('\n', '').split(',')
+                try:
+                    c = County.objects.get(county=county)
+                    c.population = population
+                    c.sq_mi = sq_mi
+                    c.save()
+                except BaseException as be:
+                    c = County.objects.create(county=county, population=population, sq_mi=sq_mi)
+                    c.save()
+                    print(county)
+                    print(be)
+        return True
+
+    def person_per_mi(self):
+        """
+        Divide population by square mile land coverage to get population density
+        :return:
+        """
+        return round(self.population / self.sq_mi, 2)
+
+    @staticmethod
+    def total_population():
+        """
+        sums up population of all counties
+        :return: total MI population
+        """
+        qs = County.objects.all().aggregate(total=Sum('population'))
+        return qs['total']
 
 
 class Sex(models.Model):
@@ -173,6 +215,40 @@ class DateTotal(models.Model):
 
     def __str__(self):
         return f'{self.date} - {self.county} - {str(self.cases)} cases, {str(self.deaths)} deaths'
+
+    @staticmethod
+    def get_all_cases_and_deaths(county=None):
+        """
+        gets the total cases and deaths
+        :param county: if populated, limits search to specific county
+        :return: tuple of (cases, deaths)
+        """
+        if county:
+            totals = DateTotal.objects.filter(county__county=county).aggregate(cases=Sum('cases'),
+                                                                               deaths=Sum('deaths'))
+        else:
+            totals = DateTotal.objects.all().aggregate(cases=Sum('cases'), deaths=Sum('deaths'))
+
+        return totals['cases'], totals['deaths']
+
+    @staticmethod
+    def cases_and_deaths_per_n(county=None, n=1000):
+        """
+        calculates total cases/deaths per n number of persons
+        :param county: county to search for, defaults to None/aggregates all
+        :param n: total persons, defaults to 1000
+        :return: tuple of (cases per n, deaths per n)
+        """
+        cases, deaths = DateTotal.get_all_cases_and_deaths(county)
+        if county:
+            population = County.objects.get(county=county).population
+        else:
+            population = County.total_population()
+
+        cases_per_n = round(cases / population * n, 2)
+        deaths_per_n = round(deaths / population * n, 2)
+
+        return cases_per_n, deaths_per_n
 
     @staticmethod
     def load_data_path(from_date: datetime.date = None):
