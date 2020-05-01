@@ -10,8 +10,7 @@ from django.core import serializers
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import CaseSerializer
-from .models import Case, Death, DateTotal, County
+from .models import DateTotal, County
 
 
 class IndexView(generic.ListView):
@@ -70,13 +69,11 @@ class IndexView(generic.ListView):
 
 
 class CaseList(APIView):
-    def get(self, request, format=None):
+    def get(self, request):
         context = {'request': request}
-        case = Case.objects.all()
-        serializer = CaseSerializer(case, many=True, context=context)
-        return Response(serializer.data)
+        return JsonResponse(context)
 
-    def post(self, request, format=None):
+    def post(self, request):
         if request.data['date_type'] == 'date':
             totals = DateTotal.objects.filter(date=(request.data['end_date']))
         else:
@@ -103,14 +100,14 @@ class CaseList(APIView):
 class CountyGrowth(APIView):
     def get(self, request):
         county = request.data.get('county')
-        cases = Case.objects.filter(county__county=county).values('date').annotate(total=Count('date'))
+        cases = DateTotal.objects.filter(county__county=county).values('date').annotate(total=Count('date'))
         case_dict = {x['date'].strftime('%m/%d'): x['total'] for x in cases}
         context = {
             'cases': case_dict
         }
         return JsonResponse(context)
 
-    def post(self, request, format=None):
+    def post(self, request):
         if request.data['county'] == 'All':
             total_qs = DateTotal.objects.all().values('date'). \
                 annotate(cases=Sum('cases'), deaths=Sum('deaths')).order_by('date')
@@ -126,9 +123,9 @@ class CountyGrowth(APIView):
             #                                                   deaths=Sum('deaths'))
 
             totals = {x['date'].strftime('%Y-%m-%d'):
-                          {'cases': x['cases'],
-                           'deaths': x['deaths'],
-                           'date': x['date'].strftime('%Y-%m-%d')}
+                      {'cases': x['cases'],
+                       'deaths': x['deaths'],
+                       'date': x['date'].strftime('%Y-%m-%d')}
                       for x in total_qs}
         else:
             totals = cumulative_qs(total_qs)
