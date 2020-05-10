@@ -242,7 +242,7 @@ class DateTotal(models.Model):
                 # remove new line character at end and set to title case
                 split_line = line.replace('\n', '').split(',')
                 county = split_line[1]
-                if 'TOTAL' in county.upper()[:5]:
+                if 'TOTAL' in county.upper():
                     continue
                 county = DateTotal.clean_county(county)
 
