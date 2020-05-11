@@ -263,6 +263,7 @@ class DateTotal(models.Model):
             db_county = County.objects.get(county=county)
         else:
             new_county = County.objects.create(county=county, population=0, sq_mi=0)
+            print('Created a new county:', county)
             new_county.save()
             db_county = County.objects.get(county=county)
 
