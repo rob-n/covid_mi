@@ -78,6 +78,55 @@ class DateTotal(models.Model):
         return f'{self.date} - {self.county} - {str(self.cases)} cases, {str(self.deaths)} deaths'
 
     @staticmethod
+    def change_over_n_days(county=None, days=7) -> (float, float):
+        """
+        returns the percent change in cases and deaths over previous n days; defaults to 7
+        :param county: county to search for, gets all counties if none
+        :param days: days to go back over
+        :return: tuple of cases, deaths as floats
+        """
+        first_day = datetime.date.today() - datetime.timedelta(days=1 + days)
+        last_day = datetime.date.today() - datetime.timedelta(days=1)
+        if county:
+            change = DateTotal.objects.filter(county__county=county)
+        else:
+            change = DateTotal.objects.all()
+
+        # first = change.filter(date=first_day).aggregate(cases=Sum('cases'), deaths=Sum('deaths'))
+        # last = change.filter(date=last_day).aggregate(cases=Sum('cases'), deaths=Sum('deaths'))
+
+        first_cases, first_deaths = DateTotal.totals_on_date(first_day, county=county)
+        last_cases, last_deaths = DateTotal.totals_on_date(last_day, county=county)
+
+        case_change = last_cases / first_cases - 1.0
+        death_change = last_deaths / first_deaths - 1.0
+
+        return case_change, death_change
+
+    @staticmethod
+    def totals_on_date(date=datetime.date.today(), county=None, cumulative=True):
+        """
+        gets cases/deaths on a specific date. Optional county parameters and cumulative boolean
+        :param date: date to search for, defaults to today
+        :param county: county to get totals for. if blank, sums all
+        :param cumulative: if true, totals are cumulative for all available dates.
+        :return: tuple of cases, deaths
+        """
+        if county:
+            totals = DateTotal.objects.filter(county__county=county)
+        else:
+            totals = DateTotal.objects.all()
+
+        if cumulative:
+            totals = totals.filter(date__lte=date)
+        else:
+            totals = totals.filter(date=date)
+
+        totals = totals.aggregate(cases=Sum('cases'), deaths=Sum('deaths'))
+
+        return totals['cases'], totals['deaths']
+
+    @staticmethod
     def get_all_cases_and_deaths(county=None):
         """
         gets the total cases and deaths
@@ -85,10 +134,11 @@ class DateTotal(models.Model):
         :return: tuple of (cases, deaths)
         """
         if county:
-            totals = DateTotal.objects.filter(county__county=county).aggregate(cases=Sum('cases'),
-                                                                               deaths=Sum('deaths'))
+            totals = DateTotal.objects.filter(county__county=county)
         else:
-            totals = DateTotal.objects.all().aggregate(cases=Sum('cases'), deaths=Sum('deaths'))
+            totals = DateTotal.objects.all()
+
+        totals = totals.aggregate(cases=Sum('cases'), deaths=Sum('deaths'))
 
         return totals['cases'], totals['deaths']
 

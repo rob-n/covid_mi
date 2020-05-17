@@ -167,3 +167,33 @@ def cumulative_qs(queryset):
                           'date': x}
 
     return date_totals
+
+
+class CountyDetailView(generic.DetailView):
+    model = County
+    slug_field = 'county'
+    slug_url_kwarg = 'county'
+    template_name = 'mi/county_detail.html'
+
+    def get(self, request, *args, **kwargs):
+        county_name = kwargs['county']
+        county = County.objects.get(county__iexact=county_name)
+        cases, deaths = DateTotal.get_all_cases_and_deaths(county.county)
+        cases_per_n, deaths_per_n = DateTotal.cases_and_deaths_per_n(county=county.county)
+        cases_per_sq, deaths_per_sq = DateTotal.cases_and_deaths_per_sq_mi(county=county.county)
+        case_change, death_change = DateTotal.change_over_n_days(county.county)
+        cfr = round(deaths / cases * 100, 2)
+        case_change = round(case_change * 100, 2)
+        death_change = round(death_change * 100, 2)
+        context = {'county': county,
+                   'totals': {'cases': cases,
+                              'deaths': deaths},
+                   'per_n': {'cases': cases_per_n,
+                             'deaths': deaths_per_n},
+                   'per_sq_mi': {'cases': cases_per_sq,
+                                 'deaths': deaths_per_sq},
+                   'change': {'cases': case_change,
+                              'deaths': death_change},
+                   'cfr': cfr
+                   }
+        return render(request, self.template_name, context)

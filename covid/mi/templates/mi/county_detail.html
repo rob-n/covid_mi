@@ -1,0 +1,27 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Insight</title>
+</head>
+<body>
+<div class="main-body">
+    <div style="margin-left: auto; margin-right: auto;">
+        <h1>{{ county.county }}</h1>
+        <p>Population: {{ county.population|intcomma }}</p>
+        <p>Area (square miles): {{ county.sq_mi|intcomma }}</p>
+        <p>Cases: {{ totals.cases|intcomma }}</p>
+        <p>Deaths: {{ totals.deaths|intcomma }}</p>
+        <p>Cases per 1,000 people: {{ per_n.cases|intcomma }}</p>
+        <p>Deaths per 1,000 people: {{ per_n.deaths|intcomma }}</p>
+        <p>Cases per square mile: {{ per_sq_mi.cases|intcomma }}</p>
+        <p>Deaths per square mile: {{ per_sq_mi.deaths|intcomma }}</p>
+        <p>Case Fatality Rate: {{ cfr }}%</p>
+        <p>Case increase over last 7 days: +{{ change.cases }}%</p>
+        <p>Death increase over last 7 days: +{{ change.deaths }}%</p>
+
+    </div>
+</div>
+</body>
+</html>

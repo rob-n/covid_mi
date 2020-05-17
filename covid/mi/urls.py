@@ -8,6 +8,7 @@ router = routers.DefaultRouter()
 urlpatterns = [
     path('case/', views.CaseList.as_view(), name='case-detail'),
     path('growth/', views.CountyGrowth.as_view(), name='growth-detail'),
+    path('county/<slug:county>', views.CountyDetailView.as_view(), name='county-insight'),
     # path('api/death/', include(router.urls)),
     path('', views.IndexView.as_view(), name='index'),
 ]
