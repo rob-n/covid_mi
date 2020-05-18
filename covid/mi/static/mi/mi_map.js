@@ -66,6 +66,9 @@ let tip = d3.tip()
         let info = 'County: ' + d.properties['NAME'] + '<br>';
         info += 'Cases: ' + total.toLocaleString() + '<br>';
         info += 'Deaths: ' + deaths.toLocaleString();
+        if (total > 0) {
+            info += '<br>CFR: ' + (deaths / total * 100).toFixed(2) + '%';
+        }
         return info
     })
     .direction(d => {
@@ -262,6 +265,7 @@ function getData() {
             totalDeaths = json['total_deaths'];
             d3.select('#case-total').text('Cases: ' + totalCases.toLocaleString());
             d3.select('#death-total').text('Deaths: ' + totalDeaths.toLocaleString());
+            d3.select('#cfr').text('CFR: ' + (totalDeaths / totalCases * 100).toFixed(2) + '%');
             d3.select('#current-date').text(parsed);
             if (!isNaN(mapData['Detroit'])) {
                 mapData['Wayne'] += mapData['Detroit'];
