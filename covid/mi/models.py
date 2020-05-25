@@ -210,11 +210,12 @@ class DateTotal(models.Model):
         website = 'https://www.michigan.gov/coronavirus/0,9753,7-406-98163_98173---,00.html'
         df: pd.DataFrame = pd.read_html(website)[0]  # should be at least 2 tables; totals is first one
         today = datetime.date.today().strftime('%Y-%m-%d')
-        # df = pd.DataFrame(np.row_stack([df.columns, df.values]), columns=['0', '1', '2'])
-        # df = df[['date', '0', '1', '2']]
-        df['date'] = today
-        df.fillna(0, inplace=True)
+        df = pd.DataFrame(np.row_stack([df.columns, df.values]), columns=['0', '1', '2'])
         headers = ['date', 'County', 'Confirmed Cases', 'Reported Deaths']
+        df.columns = headers[1:]
+        df['date'] = today
+        # df = df[['date', '0', '1', '2']]
+        df.fillna(0, inplace=True)
         df = df[headers]
         # df.loc[0]['2'] = 0 if 'named' in df.loc[0]['2'] else df.loc[0]['2']  # no header rows any more
         df.to_csv(f'{os.path.join(DateTotal.base_dir())}/mi/data/totals/totals_{today}_raw.csv',
