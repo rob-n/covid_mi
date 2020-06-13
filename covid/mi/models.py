@@ -3,6 +3,9 @@ import os
 
 import pandas as pd
 import numpy as np
+import re
+import requests
+from django.db import connection
 
 from django.db import models
 
@@ -17,6 +20,12 @@ class County(models.Model):
 
     def __str__(self):
         return self.county
+
+    @staticmethod
+    def county_dict():
+        counties = County.objects.values('id', 'county')
+        c_dict = {x['county']: x['id'] for x in counties}
+        return c_dict
 
     @staticmethod
     def load_county_info():
@@ -206,6 +215,38 @@ class DateTotal(models.Model):
         return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     @staticmethod
+    def update_totals():
+        """Gets and loads totals from the MI website"""
+        web_page = 'https://www.michigan.gov/coronavirus/0,9753,7-406-98163_98173---,00.html'
+        pattern = r'Cases_by_County.*\.xlsx'
+        html = requests.get(web_page).text
+        excel_link = re.findall(pattern, html)[0]
+        base = 'https://www.michigan.gov/documents/coronavirus/'
+        df = pd.read_excel(base + excel_link)
+        df['COUNTY'] = df['COUNTY'].apply(DateTotal.clean_county)
+        df['county_id'] = df['COUNTY']
+        df.to_csv(f'{DateTotal.base_dir()}/mi/data/totals/totals.csv', index=False)
+        df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d')
+        df['Date'] = df['Date'] + datetime.timedelta(1)
+        county_dict = County.county_dict()
+        today = datetime.date.today().strftime('%Y-%m-%d')
+        df = df[df['Date'] < today]
+        df.replace({'County_id': county_dict}, inplace=True)
+        DateTotal.objects.all().delete()
+        # columns = ['date', 'county_id', 'cases', 'deaths']
+        columns = ['date', 'county', 'cases', 'deaths']
+        # TODO: get this to be a database connection load rather than a slow loop
+        df.columns = [x.lower() for x in df.columns]
+        for ix in df[columns].index:
+            new_info = DateTotal.create(date=df.at[ix, 'date'],
+                                        county=df.at[ix, 'county'],
+                                        cases=df.at[ix, 'cases'],
+                                        deaths=df.at[ix, 'deaths'])
+            new_info.save()
+
+        # df[columns].to_sql('mi_datetotal', con=connection, if_exists='append')
+
+    @staticmethod
     def get_today_totals():
         website = 'https://www.michigan.gov/coronavirus/0,9753,7-406-98163_98173---,00.html'
         df: pd.DataFrame = pd.read_html(website)[0]  # should be at least 2 tables; totals is first one
@@ -265,7 +306,7 @@ class DateTotal(models.Model):
 
     @staticmethod
     def clean_county(county):
-        if county.upper() == 'OUT OF STATE':
+        if county.upper() == 'OUT-OF-STATE':
             county = 'Non-MI'
         elif county.upper() == 'DETROIT CITY':
             county = 'Detroit'
