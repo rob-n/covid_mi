@@ -227,7 +227,7 @@ class DateTotal(models.Model):
         df['county_id'] = df['COUNTY']
         df.to_csv(f'{DateTotal.base_dir()}/mi/data/totals/totals.csv', index=False)
         df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d')
-        df['Date'] = df['Date'] + datetime.timedelta(1)
+        # df['Date'] = df['Date'] + datetime.timedelta(1)
         county_dict = County.county_dict()
         today = datetime.date.today().strftime('%Y-%m-%d')
         df = df[df['Date'] < today]
@@ -244,7 +244,7 @@ class DateTotal(models.Model):
                                         deaths=df.at[ix, 'deaths'])
             new_info.save()
 
-        # df[columns].to_sql('mi_datetotal', con=connection, if_exists='append')
+        # df[columns].to_sql(name='mi_datetotal', con=connection, if_exists='append')
 
     @staticmethod
     def get_today_totals():
