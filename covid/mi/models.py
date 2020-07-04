@@ -226,25 +226,24 @@ class DateTotal(models.Model):
         df['COUNTY'] = df['COUNTY'].apply(DateTotal.clean_county)
         df['county_id'] = df['COUNTY']
         df.to_csv(f'{DateTotal.base_dir()}/mi/data/totals/totals.csv', index=False)
+        # df = pd.read_csv(f'{DateTotal.base_dir()}/mi/data/totals/totals.csv')
         df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d')
         # df['Date'] = df['Date'] + datetime.timedelta(1)
         county_dict = County.county_dict()
         today = datetime.date.today().strftime('%Y-%m-%d')
         df = df[df['Date'] < today]
-        df.replace({'County_id': county_dict}, inplace=True)
+        df.replace({'county_id': county_dict}, inplace=True)
         DateTotal.objects.all().delete()
-        # columns = ['date', 'county_id', 'cases', 'deaths']
-        columns = ['date', 'county', 'cases', 'deaths']
-        # TODO: get this to be a database connection load rather than a slow loop
+        columns = ['id', 'date', 'cases', 'deaths', 'county_id']
         df.columns = [x.lower() for x in df.columns]
-        for ix in df[columns].index:
-            new_info = DateTotal.create(date=df.at[ix, 'date'],
-                                        county=df.at[ix, 'county'],
-                                        cases=df.at[ix, 'cases'],
-                                        deaths=df.at[ix, 'deaths'])
-            new_info.save()
 
-        # df[columns].to_sql(name='mi_datetotal', con=connection, if_exists='append')
+        df['id'] = df.index + 1
+        df = df[columns]
+        df['date'] = df['date'].dt.strftime('%Y-%m-%d')
+        # df.set_index('date', inplace=True)
+        query = 'INSERT INTO mi_datetotal (id, date, cases, deaths, county_id) VALUES (?, ?, ?, ?, ?);'
+        records = [tuple(x) for x in df.to_numpy()]
+        connection.cursor().executemany(query, records)
 
     @staticmethod
     def get_today_totals():
