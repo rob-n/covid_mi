@@ -231,7 +231,7 @@ class DateTotal(models.Model):
         # df['Date'] = df['Date'] + datetime.timedelta(1)
         county_dict = County.county_dict()
         today = datetime.date.today().strftime('%Y-%m-%d')
-        df = df[df['Date'] < today]
+        df = df[(df['Date'] < today) & (df['CASE_STATUS'] == 'Confirmed')]
         df.replace({'county_id': county_dict}, inplace=True)
         DateTotal.objects.all().delete()
         columns = ['id', 'date', 'cases', 'deaths', 'county_id']
