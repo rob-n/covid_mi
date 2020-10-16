@@ -218,10 +218,11 @@ class DateTotal(models.Model):
     def update_totals():
         """Gets and loads totals from the MI website"""
         web_page = 'https://www.michigan.gov/coronavirus/0,9753,7-406-98163_98173---,00.html'
-        pattern = r'Cases_by_County.*\.xlsx'
+        pattern = r'Cases_and_Deaths_by_County_and.*\.xlsx'
         html = requests.get(web_page).text
         excel_link = re.findall(pattern, html)[0]
         base = 'https://www.michigan.gov/documents/coronavirus/'
+        print('Obtaining records...')
         df = pd.read_excel(base + excel_link)
         df['COUNTY'] = df['COUNTY'].apply(DateTotal.clean_county)
         df['county_id'] = df['COUNTY']
@@ -243,6 +244,7 @@ class DateTotal(models.Model):
         # df.set_index('date', inplace=True)
         query = 'INSERT INTO mi_datetotal (id, date, cases, deaths, county_id) VALUES (?, ?, ?, ?, ?);'
         records = [tuple(x) for x in df.to_numpy()]
+        print(f'Loading {str(len(df))} records...')
         connection.cursor().executemany(query, records)
 
     @staticmethod
