@@ -122,7 +122,7 @@ function totalLegend() {
     if (first) {
         originalDomain = domainVals;
     }
-    domainVals = [1, 25, 50, 100, 500, 1000, 5000, 20000, 500000];
+    domainVals = [1, 500, 1000, 5000, 15000, 30000, 50000, 100000, 1000000];
     color = d3.scaleThreshold(domainVals,
         d3.schemeOranges[9]);
 
